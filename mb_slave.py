@@ -10,15 +10,16 @@ class MBSlave:
         self.last_fetched = None
 
     def __repr__(self):
-        s = 'MBSlave address=%d, name="%s", has %d registers:\n - ' % ( self.address, self.name, len(self.registers) )
-        s = s + "\n - ".join([repr(self.registers[a]) for a in sorted(self.registers.keys())])
+        s = 'MBSlave address=%d, name="%s", has %d registers' % ( self.address, self.name, len(self.registers) )
+        for r in [repr(self.registers[r]) for r in self.registers]:
+            s = s + "\n%s" % r
         return s
 
     def add_register(self, register):
         if not isinstance(register, MBRegister):
             raise TypeError('must be MBRegister')
         self.registers[register.address] = register
-        
+
 if __name__ == '__main__':
     import pp_functions
     def c_to_k(c):
@@ -31,7 +32,7 @@ if __name__ == '__main__':
     pp_functions.register(linear_scale)
 
     # Demo/test
-    s = MBSlave(1, 'Tom Waits')
+    s = MBSlave(address=1, name='Tom Waits')
     s.add_register(MBRegister(address=1, name='Temp', pp_func='c_to_k'))
     s.add_register(MBRegister(address=2, name='Volts', pp_func='linear_scale', pp_params=[6.666]))
     s.add_register(MBRegister(address=3, name='Current'))
