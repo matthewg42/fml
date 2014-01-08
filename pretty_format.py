@@ -43,7 +43,14 @@ class PrettyFormat:
     def underline(self, char='-'):
         return char * self.width
 
+# define some ready-to-use formats
+PfInt       = PrettyFormat(width=6,  align='right', fmt='d')
+PfFloat     = PrettyFormat(width=9,  align='right', fmt='.3f')
+PfTimestamp = PrettyFormat(width=23, align='left',  fmt='s')
+
 if __name__ == '__main__':
+    import datetime
+    from mb_register import MBRegister
     
     for f in [PrettyFormat(10),
               PrettyFormat(6,  align='right', fmt='d', pad='0'),
@@ -59,5 +66,8 @@ if __name__ == '__main__':
         print "f.underline():         '%s'" % f.underline()
         print ""
 
-
+    print "PfInt        -1234 : '%s'" % PfInt.out(-1234)
+    print "PfFloat 3.14159265 : '%s'" % PfFloat.out(3.14159265)
+    print "PfTimestamp [now]  : '%s'" % PfTimestamp.out(datetime.datetime.now().strftime("%Y-%m-%d %T.%f")[:-3])
+    print ""
 

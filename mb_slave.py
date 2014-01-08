@@ -6,18 +6,18 @@ class MBSlave:
     def __init__(self, address, name):
         self.address = address
         self.name = name
-        self.regs = dict()
+        self.registers = dict()
         self.last_fetched = None
 
-    def add_register(self, reg):
-        if not isinstance(reg, MBRegister):
-            raise TypeError('must be MBRegister')
-        self.regs[reg.address] = reg
-
     def __repr__(self):
-        s = 'MBSlave address=%d, name="%s", has %d regs:\n - ' % ( self.address, self.name, len(self.regs) )
-        s = s + "\n - ".join([repr(self.regs[a]) for a in sorted(self.regs.keys())])
+        s = 'MBSlave address=%d, name="%s", has %d registers:\n - ' % ( self.address, self.name, len(self.registers) )
+        s = s + "\n - ".join([repr(self.registers[a]) for a in sorted(self.registers.keys())])
         return s
+
+    def add_register(self, register):
+        if not isinstance(register, MBRegister):
+            raise TypeError('must be MBRegister')
+        self.registers[register.address] = register
         
 if __name__ == '__main__':
     import pp_functions
