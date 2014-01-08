@@ -6,11 +6,11 @@ from pretty_format import PrettyFormat
 import re
 
 # key = mb_type id, value = (size_in_bytes, pack string, default format)
-mb_type_info = {'int16u': (2, '>H', PrettyFormat(width=8, align='right', fmt='d', pad=''))}
+mb_type_info = {'uint16': (2, '>H', PrettyFormat(width=8, align='right', fmt='d', pad=''))}
 pp_type_info = {'float': float, 'int': int}
 
 class MBRegister:
-    def __init__(self, address, name, mb_type='int16u', pp_func='', pp_params=[], pp_type='float', pf=None, display=True):
+    def __init__(self, address, name, mb_type='uint16', pp_func='', pp_params=[], pp_type='float', pf=None, display=True):
         # more types to be added later maybe!
         if not isinstance(address, int):
             raise TypeError('address must be an integer')

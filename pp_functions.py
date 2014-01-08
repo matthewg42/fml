@@ -50,6 +50,34 @@ def check(fname, *params):
         raise ParameterError(fname, pp_functions[fname][1], len(params))
     return True
 
+def thermister_to_celcius(data, B, T0, R0):
+    # R = (V*R_Balance)/(3.3-V), where V = ((data*4.096)/2048).
+    # temp in C = (1.0/(1.0/T0+(1.0/B)*log(R/R0))) - 273.15
+    # R0, B, T0 are constants from the circuit / components
+    # simplified formulae and generated code from mathomatic.  Assuming R_Balance is the same thing as R0
+    V = float(data)/500.0
+    R = (V*float(R0)/((33.0/10.0) - V))
+    return (1.0/(1.0/float(T0)+(1.0/float(B))*math.log(R/float(R0)))) - 273.15
+
+def scale_voltage(data, R1, R2):
+    # Conversion from a data reading (16 bit number) into the voltage is:
+    # Actual input voltage = ((R1+R2)/(R1))*((data*4.096)/2047)
+    # Where R1 and R2 are the input resistor values which will vary with different ranges.
+    # simplified by mathomatic
+    return ((float(data)*4.096/2047)*float(R1+R2))/float(R1)
+
+def scale_current(data):
+    # The current varies around a 2V midpoint (set by an accurate voltage reference). 
+    # If the value is >2V the it is input current, if it is <2V then it is output current.
+    # The current transducer puts out 100mV per Amp. So conversion is:
+    # Actual input current = (((data*4.096)/2047)-2)/0.1
+    #return (((data*4.096)/2047)-2)/0.1
+    return (((float(data)*4.096)/2047.))/0.1
+
+register(thermister_to_celcius)
+register(scale_voltage)
+register(scale_current)
+
 if __name__ == '__main__':
     def linear_scale(data, factor):
         return data * factor

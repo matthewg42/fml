@@ -2,8 +2,10 @@
 
 import ConfigParser
 import serial
+import re
 from mb_register import MBRegister
 from mb_slave import MBSlave
+from pretty_format import PrettyFormat, PfFloat, PfInt
 
 class MBMaster:
     def __init__(self, config_file="/etc/phealth.conf"):
@@ -40,24 +42,48 @@ class MBMaster:
                     name = parser.get(sec,'name')
                 else:
                     name = sec
-                print "address=%s, name=%s" % (repr(address), repr(name))
                 slave = MBSlave(address = address, name = name)
+
+                # extract register details
+                rexp = re.compile('^r(\d+)_name$')
+                for item in [i for i in parser.items(sec) if rexp.match(i[0]) is not None]:
+                    addr_str = rexp.match(item[0]).groups()[0]
+                    address = int(addr_str)
+                    name = item[1]
+                    pp_func = ''
+                    pp_params = []
+                    raw_type = 'uint16'
+                    pp_type = 'float'
+                    if 'r%s_pp_fn'%addr_str in [s[0] for s in parser.items(sec)]:
+                        pp_func = parser.get(sec, 'r%s_pp_fn'%addr_str)
+                    if 'r%s_pp_param'%addr_str in [s[0] for s in parser.items(sec)]:
+                        pp_params = parser.get(sec, 'r%s_pp_param'%addr_str).split(',')
+                    if 'r%s_raw_type'%addr_str in [s[0] for s in parser.items(sec)]:
+                        raw_type = parser.get(sec, 'r%s_raw_type'%addr_str)
+                    if 'r%s_pp_type'%addr_str in [s[0] for s in parser.items(sec)]:
+                        pp_type = parser.get(sec, 'r%s_pp_type'%addr_str)
+                    pf = {'float': PfFloat, 'int': PfInt}[pp_type]
+                    #print "addr_str=%s, address=%s, name=%s, pp_func=%s, pp_params=%s, raw_type=%s, pp_type=%s, pf=%s" % (
+                    #    repr(addr_str),
+                    #    repr(address),
+                    #    repr(name),
+                    #    repr(pp_func),
+                    #    repr(pp_params),
+                    #    repr(raw_type),
+                    #    repr(pp_type),
+                    #    repr(pf) )
+                    slave.add_register(MBRegister(address=address, name=name, mb_type=raw_type, pp_func=pp_func, pp_params=pp_params, pp_type=pp_type, pf=pf))
                 self.add_slave(slave)
             except Exception as e:
                 print "ERROR: failed add slave for section '%s' because %s/%s" % (sec, type(e), e)
+                raise
 
-
-        print repr(self)
-        print self.repr_config()
-        print 'slaves:'
-        for s in self.slaves:
-            print '+ %s' % repr(self.slaves[s])
 
     def __repr__(self):
         return "MBMaster(config_file='%s')" % self.config_file
 
     def repr_config(self):
-        return "serial_device=%s, serial_baud=%s, serial_bytesize=%s, serial_parity=%s, serial_stopbits=%s, serial_timeout=%s, poll_time=%s" % (
+        s = "serial_device=%s, serial_baud=%s, serial_bytesize=%s, serial_parity=%s, serial_stopbits=%s, serial_timeout=%s, poll_time=%s" % (
                 repr(self.serial_device),
                 repr(self.serial_baud),
                 repr(self.serial_bytesize),
@@ -65,6 +91,10 @@ class MBMaster:
                 repr(self.serial_stopbits),
                 repr(self.serial_timeout),
                 repr(self.poll_time) )
+        s = s + "\nSlaves:"
+        for sl in self.slaves.keys():
+            s = s + '\n+ %s' % repr(self.slaves[sl])
+        return s
 
     def add_slave(self, slave):
         if not isinstance(slave, MBSlave):
@@ -73,4 +103,5 @@ class MBMaster:
 
 if __name__ == '__main__':
     m = MBMaster('./phealth.conf')
-   
+    print repr(m)
+    print m.repr_config()
