@@ -5,40 +5,43 @@ import pp_functions
 from pretty_format import PrettyFormat
 import re
 
-# key = data_type id, value = (size_in_bytes, pack string, default format)
-data_type_info = {'int16u': (2, '>H', PrettyFormat(width=8, align='right', fmt='d', pad=''))}
+# key = mb_type id, value = (size_in_bytes, pack string, default format)
+mb_type_info = {'int16u': (2, '>H', PrettyFormat(width=8, align='right', fmt='d', pad=''))}
+pp_type_info = {'float': float, 'int': int}
 
 class MBRegister:
-    def __init__(self, address, name, data_type='int16u', pp_func='', pp_params=[], pf=None, display=True):
+    def __init__(self, address, name, mb_type='int16u', pp_func='', pp_params=[], pp_type='float', pf=None, display=True):
         # more types to be added later maybe!
         if not isinstance(address, int):
             raise TypeError('address must be an integer')
         if not isinstance(name, str):
             raise TypeError('name must be a string')
-        if data_type not in data_type_info.keys():
-            raise ValueError('data_type not known: %s' % data_type)
+        if mb_type not in mb_type_info.keys():
+            raise ValueError('mb_type not known: %s' % mb_type)
+        if pp_type not in pp_type_info.keys():
+            raise TypeError('pp_type not known: %s')
         if pf is not None and not isinstance(pf, PrettyFormat):
             raise TypeError('pf must be a PrettyFormat object')
         pp_functions.check(pp_func, *pp_params)
 
         self.address = address
         self.name = name
-        self.data_type = data_type
+        self.mb_type = mb_type
         self.pp_func = pp_func
         self.pp_params = pp_params
         self.display = display
-        self.size = data_type_info[data_type][0]
-        self.pack = data_type_info[data_type][1]
+        self.size = mb_type_info[mb_type][0]
+        self.pack = mb_type_info[mb_type][1]
         if pf == None:
-            self.pf = data_type_info[data_type][2]
+            self.pf = mb_type_info[mb_type][2]
         else:
             self.pf = pf
         self.raw_value = None
         self.pp_value = None
 
     def __repr__(self):
-        return "MBRegister(address=%d, name='%s', data_type='%s', pp_func='%s', pp_params=%s, pf=%s, display=%s)" % (
-            self.address, self.name, self.data_type, self.pp_func, repr(self.pp_params), repr(self.pf), repr(self.display) )
+        return "MBRegister(address=%d, name='%s', mb_type='%s', pp_func='%s', pp_params=%s, pf=%s, display=%s)" % (
+            self.address, self.name, self.mb_type, self.pp_func, repr(self.pp_params), repr(self.pf), repr(self.display) )
 
     def read(self, data):
         """ data is a bytearray which will be converted to raw data """
