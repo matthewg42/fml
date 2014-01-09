@@ -288,7 +288,7 @@ class MBMaster:
             h1.append(sl_text)
         self.output_fd.write(gutter.join(h1) + "\n")
         self.output_fd.write(gutter.join(h2) + "\n")
-        self.output_fd.write(gutter.join(ul) + "\n")
+        self.output_fd.write(gutter.join(ul) + "\n\n")
 
     def output_data_pretty(self, timestamp):
         gutter = ' '
