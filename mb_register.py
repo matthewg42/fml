@@ -69,11 +69,14 @@ class MBRegister:
         return self.pf.fmtstr(string=True) % self.name
 
     def pretty_value(self):
-        return self.pf.fmtstr(string=True) % self.get()
+        v = self.get()
+        r = self.pf.out(v)
+        return r
 
 if __name__ == '__main__':
     from pretty_format import PrettyFormat, PfInt, PfFloat, PfTimestamp
     import datetime
+    import random
     def c_to_k(c):
         return c - 274.15
 
@@ -105,7 +108,8 @@ if __name__ == '__main__':
     print " | ".join([r.pf.underline() for r in regs])
     for n in range(0,300, 14):
         for r in regs:
-            r.set(n)
+            #r.set(n)
+            r.set(random.random()*30)
         print " | ".join([r.pretty_value() for r in regs])
     print " | ".join([r.pf.underline() for r in regs])
         

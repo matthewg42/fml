@@ -213,16 +213,17 @@ class MBMaster:
         a = ['timestamp']
         for s_add, slave in self.slaves.items():
             for r_add, register in slave.registers.items():
-                a.append(register.name.replace(',','\\,'))
+                if register.display:
+                    a.append(register.name.replace(',','\\,'))
         # TODO proper output file
         print ",".join(a)
-        
 
     def output_data_csv(self, timestamp):
         a = [datetime.datetime.fromtimestamp(time.time()).strftime("%Y-%m-%d %T.%f")[:-3]]
         for s_add, slave in self.slaves.items():
             for r_add, register in slave.registers.items():
-                a.append(register.pretty_value().replace(' ',''))
+                if register.display:
+                    a.append(register.pretty_value().replace(' ',''))
         # TODO proper output file
         print ",".join(a)
 
