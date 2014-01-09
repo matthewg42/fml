@@ -38,7 +38,12 @@ class PrettyFormat:
         return '%%%s%s%d%s'  % (align, pad, self.width, fmt)
 
     def out(self, value, string=False):
-        return self.fmtstr(string) % value
+        try:
+            r = self.fmtstr(string) % value
+        except:
+            r = '#ERR'
+            pass
+        return r
 
     def underline(self, char='-'):
         return char * self.width

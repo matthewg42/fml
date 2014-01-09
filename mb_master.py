@@ -110,6 +110,7 @@ class MBMaster:
                     #    repr(pp_type),
                     #    repr(pf) )
                     slave.add_register(MBRegister(address=address, name=name, mb_type=raw_type, pp_func=pp_func, pp_params=pp_params, pp_type=pp_type, pf=pf))
+                slave.update_mb_query()
                 self.add_slave(slave)
             except Exception as e:
                 print "ERROR: failed add slave for section '%s' because %s/%s" % (sec, type(e), e)
@@ -214,13 +215,18 @@ class MBMaster:
 
     def query_slaves(self):
         for s_add, slave in self.slaves.items():
-            if log: log.debug('fetching slave address=%d, name=%s  query=%s' % (s_add, slave.name, repr(slave.mb_query)))
+            if log: log.debug('fetching slave address=%d, name=%s query=%s' % (s_add, slave.name, repr(slave.mb_query)))
+            # write the modbus query command to all nodes connected to serial port
+            slave.clear_regs()
             self.serial.write(slave.mb_query)
-            # TODO: actually fetching registers
-            for r_add, register in slave.registers.items():
-                register.set(random.randint(700,1000))
-            # simulate serial comms delay
-            time.sleep(0.01)
+            self.serial.flush()
+            # wait for reply
+            reply = self.serial.read(1000)
+            if len(reply) == 0:
+                if log: log.warning('no reply from slave address=%d, name=%s' % (s_add, slave.name))
+            else:
+                if log: log.debug('reply from slave address=%d, name=%s : %s' % (s_add, slave.name, repr(reply)))
+                slave.set_values(reply)
 
     def output_data(self, timestamp):
         if self.output_format == 'csv':

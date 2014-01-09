@@ -48,6 +48,10 @@ class MBRegister:
         self.raw_value = struct.unpack(self.pack, data)[0]
         self.pp_value = None
 
+    def clear(self):
+        self.raw_value = None
+        self.pp_value = None
+
     def set(self, value):
         """ value is the raw value to be set.  This is probably a useless function which
             will never be used except in testing """
