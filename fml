@@ -4,22 +4,27 @@ import argparse
 import sys
 import os
 import re
+import signal
+import time
 import logging
 import logging.handlers
 import serial
 import subprocess
 import ConfigParser
+import daemon
+from daemon.pidlockfile import PIDLockFile
 from mb_master import MBMaster
 import mb_master
 import mb_slave
 
-global args, log
+global args, log, pidfile
+pidfile = '/tmp/fml.pid'
 
 def read_config_file():
     global args, log
     if not os.path.exists(args.config_file):
         sys.stderr.write("ERROR: cannot config file does not exist: %s\n" % args.config_file)
-        sys.exit(1)
+        shutdown(1)
     parser = ConfigParser.SafeConfigParser( {
         'logging_level': 'warning'
     } )
@@ -52,17 +57,16 @@ def get_fml_pids():
     return [pid for pid in cmd.stdout.read().split('\n') if pid not in ['',str(os.getpid())]]
 
 def list_fml_instances():
-    global log
     pids = get_fml_pids()
     if len(pids) == 0:
-        log.info("list_fml_instances: no fml processes running")
+        print "No fml processes found"
         return
     subprocess.call(['ps','u','-p',','.join(pids)])
 
 def kill_fml_instances():
     pids = get_fml_pids()
     if len(pids) == 0:
-        log.info("kill_fml_instances: no fml processes running")
+        print "No fml processes found"
         return
     sys.stdout.write("killing %d fml processes... trying SIGHUP first " % len(pids))
     sys.stdout.flush()
@@ -90,6 +94,54 @@ def kill_fml_instances():
         sys.stdout.flush()
     print "\nWARNING: still %d processes running. Try running with sudo?" % len(pids)
 
+def check_pidfile():
+    global pidfile
+    if os.path.exists(pidfile):
+        with open(pidfile, 'r') as f:
+            pid = f.read()
+        if pid in get_fml_pids():
+            sys.stderr.write("fml: already running with pid = %s, kill it before starting fml\n" % repr(pid))
+            sys.exit(1)
+        else:
+            sys.stderr.write('fml: removing stale pidfile : %s\n' % pidfile);
+            os.remove(pidfile)
+
+    with open(pidfile, 'w') as f:
+        f.write(str(os.getpid()))
+
+def main():
+    global args, log
+    read_config_file()
+    init_log()
+
+    # create our master object, passing args (with None values removed) for over-riding config file settings
+    master = MBMaster(config_file=args.config_file, cl_args={k: v for k, v in vars(args).iteritems() if v is not None})
+
+    if args.one_time_operation == 'dump':
+        # hide PrettyFormatter details cos it makes the output too wide with little benefit
+        print repr(master)
+        r = master.dump_config()
+        if not args.verbose:
+            r = re.sub(r'pf=[^\)]*\), ', r'', r)
+            r = re.sub(r', display=(True|False)', r'', r)
+        print r
+        sys.exit(0)
+
+    master.run()
+    shutdown(0)
+
+def shutdown(errlevel=0):
+    global pidfile, log
+    if os.path.exists(pidfile):
+        os.remove(pidfile)
+    log.info('bye')
+    sys.exit(errlevel)
+
+def sighandler(signum, frame):
+    global log
+    if log: log.info('received signal %s, shutting down...' % signum)
+    shutdown()
+
 if __name__ == '__main__':
     global args, log
     aparser = argparse.ArgumentParser(description='Modbus Register Logging Daemon')
@@ -99,6 +151,7 @@ if __name__ == '__main__':
     aparser.add_argument('--debug', dest='logging_level', action='store_const', const=logging.DEBUG, default=None, help='write debugging output in the log')
     aparser.add_argument('--dump-config', dest='one_time_operation', action='store_const', const='dump', default=None, help='print fml configuratio and exit')
     aparser.add_argument('--format', dest='output_format', default=None, help='write in specified format (gnostic, csv, pretty or rrd)')
+    aparser.add_argument('--info', dest='logging_level', action='store_const', const=logging.INFO, default=None, help='write informational output in the log')
     aparser.add_argument('--interval', default=None, type=float, help='how many seconds between fetching data from slaves')
     aparser.add_argument('--list-fml', dest='one_time_operation', action='store_const', const='list', default=None, help='show a list of fml processes which are running')
     aparser.add_argument('--log-file', dest='log_file', default=None, help='send logging to this file instead of stderr (has no effect when in daemon mode)')
@@ -115,8 +168,6 @@ if __name__ == '__main__':
     aparser.add_argument('--verbose', action='store_const', const=True, default=False, help='be more verbose (dump command)')
 
     args = aparser.parse_args()
-    read_config_file()
-    init_log()
 
     if args.one_time_operation == 'list':
         list_fml_instances() 
@@ -126,18 +177,9 @@ if __name__ == '__main__':
         kill_fml_instances() 
         sys.exit(0)
 
-    # create our master object, passing args (with None values removed) for over-riding config file settings
-    master = MBMaster(config_file=args.config_file, cl_args={k: v for k, v in vars(args).iteritems() if v is not None})
+    for sig in [signal.SIGHUP, signal.SIGTERM, signal.SIGUSR1, signal.SIGUSR2, signal.SIGQUIT, signal.SIGINT]:
+        signal.signal(sig, sighandler)
+    check_pidfile()
 
-    if args.one_time_operation == 'dump':
-        # hide PrettyFormatter details cos it makes the output too wide with little benefit
-        print repr(master)
-        r = master.dump_config()
-        if not args.verbose:
-            r = re.sub(r'pf=[^\)]*\), ', r'', r)
-            r = re.sub(r', display=(True|False)', r'', r)
-        print r
-        sys.exit(0)
-
-    master.run()
+    main()
 
