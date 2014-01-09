@@ -128,7 +128,9 @@ if __name__ == '__main__':
     if args.one_time_operation == 'dump':
         # hide PrettyFormatter details cos it makes the output too wide with little benefit
         print repr(master)
-        print re.sub(r'pf=[^\)]*\), ', r'', master.dump_config())
+        r = re.sub(r'pf=[^\)]*\), ', r'', master.dump_config())
+        r = re.sub(r', display=(True|False)', r'', r)
+        print r
         sys.exit(0)
 
     master.run()
