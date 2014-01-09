@@ -109,6 +109,7 @@ if __name__ == '__main__':
     aparser.add_argument('--serial-stopbits', dest='serial_stopbits', type=int, default=None, help='specify number of stop bits for serial communications')
     aparser.add_argument('--serial-timeout', dest='serial_timeout', type=float, default=None, help='how long to wait for a modbus reply')
     aparser.add_argument('--times', default=None, type=int, help='fetch from slaves a specified number of times and then exit')
+    aparser.add_argument('--verbose', action='store_const', const=True, default=False, help='be more verbose (dump command)')
 
     args = aparser.parse_args()
     read_config_file()
@@ -128,8 +129,10 @@ if __name__ == '__main__':
     if args.one_time_operation == 'dump':
         # hide PrettyFormatter details cos it makes the output too wide with little benefit
         print repr(master)
-        r = re.sub(r'pf=[^\)]*\), ', r'', master.dump_config())
-        r = re.sub(r', display=(True|False)', r'', r)
+        r = master.dump_config()
+        if not args.verbose:
+            r = re.sub(r'pf=[^\)]*\), ', r'', r)
+            r = re.sub(r', display=(True|False)', r'', r)
         print r
         sys.exit(0)
 
