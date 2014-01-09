@@ -1,6 +1,12 @@
 #!/usr/bin/env python
 
+import logging
+import mb_crc
+from struct import pack
 from mb_register import MBRegister
+
+global log
+log = None
 
 class MBSlave:
     def __init__(self, address, name):
@@ -23,6 +29,16 @@ class MBSlave:
         if not isinstance(register, MBRegister):
             raise TypeError('must be MBRegister')
         self.registers[register.address] = register
+        # work out the modbus command (changes each time a register is added)
+        first=min(self.registers)
+        count=max(self.registers)-first+1
+        query = bytearray(pack("B", self.address))      # first the target slave address
+        query.extend(bytearray(pack("B", 3)))           # then the operation (3 = fetch holding regs)
+        query.extend(bytearray(pack(">H", first)))      # then the first register to fetch as a 2 byte int
+        query.extend(bytearray(pack(">H", count)))      # and the register count as a 2 byte int
+        query.extend(mb_crc.calculate_crc(query))       # finally calculate and append the checksum
+        if log: log.debug('build_query register=%d, first=%d, count=%d -> query: %s' % (self.address, first, count, repr(query)))
+        self.mb_query = query
 
 if __name__ == '__main__':
     import pp_functions
@@ -37,10 +53,11 @@ if __name__ == '__main__':
 
     # Demo/test
     s = MBSlave(address=1, name='Tom Waits')
-    s.add_register(MBRegister(address=1, name='Temp', pp_func='c_to_k'))
+    s.add_register(MBRegister(address=0, name='Temp', pp_func='c_to_k'))
     s.add_register(MBRegister(address=2, name='Volts', pp_func='linear_scale', pp_params=[6.666]))
-    s.add_register(MBRegister(address=3, name='Current'))
+    s.add_register(MBRegister(address=11, name='Current'))
 
     print repr(s)
+    print "query is: %s" % repr(s.mb_query)
 
 

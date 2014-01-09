@@ -214,7 +214,8 @@ class MBMaster:
 
     def query_slaves(self):
         for s_add, slave in self.slaves.items():
-            if log: log.debug('fetching slave address=%d, name=%s' % (s_add, slave.name))
+            if log: log.debug('fetching slave address=%d, name=%s  query=%s' % (s_add, slave.name, repr(slave.mb_query)))
+            self.serial.write(slave.mb_query)
             # TODO: actually fetching registers
             for r_add, register in slave.registers.items():
                 register.set(random.randint(700,1000))

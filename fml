@@ -11,6 +11,7 @@ import subprocess
 import ConfigParser
 from mb_master import MBMaster
 import mb_master
+import mb_slave
 
 global args, log
 
@@ -44,6 +45,7 @@ def init_log():
         handler.setFormatter(formatter)
         log.addHandler(handler)
     mb_master.log = log
+    mb_slave.log = log
 
 def get_fml_pids():
     cmd = subprocess.Popen(['pgrep', '-f', 'python.*/fml'] , shell=False, stdout=subprocess.PIPE)
