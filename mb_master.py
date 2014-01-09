@@ -4,10 +4,14 @@ import ConfigParser
 import serial
 import re
 import time
+import datetime
 import logging
 from mb_register import MBRegister
 from mb_slave import MBSlave
 from pretty_format import PrettyFormat, PfFloat, PfInt
+
+# TODO: remove this once we don't need test data
+import random
 
 global log
 log = None
@@ -21,6 +25,7 @@ class MBMaster:
         self.output_file = None
         self.output_format = None
         self.daemon = False
+        self.stats = {'iterations': 0, 'warnings': 0, 'errors': 0}
         self.read_config_file(cl_args)
 
     def read_config_file(self, cl_args={}):
@@ -135,15 +140,17 @@ class MBMaster:
         self.slaves[slave.address] = slave
 
     def run(self):  
-        num_warnings = 0
-        num_errors = 0
+        self.open_serial_port()
+        self.open_output_file()
+        self.output_headers()
+
         while True:
             loop_start_time = time.time()
             if log: log.debug('fetching from slaves...')
 
-            for address, slave in self.slaves.items():
-                if log: log.debug('fetching slave address=%d, name=%s' % (slave.address, slave.name))
-                time.sleep(0.01)
+            self.query_slaves()
+            self.output_data((loop_start_time + time.time()) / 2)  # average now and loop start to give most "middle" time... :s
+
             # If we are only running some fixed number of times, check 
             # if we're done and break out of look if so.
             if self.times is not None:
@@ -159,8 +166,65 @@ class MBMaster:
                 time.sleep(wait_time)
             else:
                 if log: log.warning('fetching slaves took %.3f sec, interval=%.3f. Consider raising interval.' % ( fetch_time, self.interval ))
-                num_warnings += 1
+                self.stats['warnings'] += 1
+            self.stats['iterations'] += 1
         if log: log.debug('all iterations complete, exiting.')
+
+    def open_serial_port(self):
+        print "TODO: open_serial_port"
+
+    def open_output_file(self):
+        print "TODO: open_output_file"
+
+    def output_headers(self):
+        if self.output_format == 'csv':
+            self.output_headers_csv()
+        elif self.output_format == 'gnostic':
+            self.output_headers_gnostic()
+        elif self.output_format == 'pretty':
+            self.output_headers_pretty()
+        elif self.output_format == 'rrd':
+            self.output_headers_rrd()
+        else:
+            raise ValueError('unknown output format %s' % repr(self.output_format))
+
+    def query_slaves(self):
+        for s_add, slave in self.slaves.items():
+            if log: log.debug('fetching slave address=%d, name=%s' % (s_add, slave.name))
+            # TODO: actually fetching registers
+            for r_add, register in slave.registers.items():
+                register.set(random.randint(700,1000))
+            # simulate serial comms delay
+            time.sleep(0.01)
+
+    def output_data(self, timestamp):
+        if self.output_format == 'csv':
+            self.output_data_csv(timestamp)
+        elif self.output_format == 'gnostic':
+            self.output_data_gnostic(timestamp)
+        elif self.output_format == 'pretty':
+            self.output_data_pretty(timestamp)
+        elif self.output_format == 'rrd':
+            self.output_data_rrd(timestamp)
+        else:
+            raise ValueError('unknown output format %s' % repr(self.output_format))
+
+    def output_headers_csv(self):
+        a = ['timestamp']
+        for s_add, slave in self.slaves.items():
+            for r_add, register in slave.registers.items():
+                a.append(register.name.replace(',','\\,'))
+        # TODO proper output file
+        print ",".join(a)
+        
+
+    def output_data_csv(self, timestamp):
+        a = [datetime.datetime.fromtimestamp(time.time()).strftime("%Y-%m-%d %T.%f")[:-3]]
+        for s_add, slave in self.slaves.items():
+            for r_add, register in slave.registers.items():
+                a.append(register.pretty_value().replace(' ',''))
+        # TODO proper output file
+        print ",".join(a)
 
 if __name__ == '__main__':
     m = MBMaster('./fml.conf')

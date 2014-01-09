@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import inspect
+import math
 
 pp_functions = dict()
 
