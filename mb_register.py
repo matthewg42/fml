@@ -33,20 +33,16 @@ class MBRegister:
         self.size = mb_type_info[mb_type][0]
         self.pack = mb_type_info[mb_type][1]
         if pf == None:
-            self.pf = mb_type_info[mb_type][2]
+            self.pf = PrettyFormat()
         else:
             self.pf = pf
+        self.pf.expand_to_fit(self.name)
         self.raw_value = None
         self.pp_value = None
 
     def __repr__(self):
         return "MBRegister(address=%d, name='%s', mb_type='%s', pp_func='%s', pp_params=%s, pf=%s, display=%s)" % (
             self.address, self.name, self.mb_type, self.pp_func, repr(self.pp_params), repr(self.pf), repr(self.display) )
-
-    def read(self, data):
-        """ data is a bytearray which will be converted to raw data """
-        self.raw_value = struct.unpack(self.pack, data)[0]
-        self.pp_value = None
 
     def clear(self):
         self.raw_value = None
@@ -68,6 +64,10 @@ class MBRegister:
             if self.pp_value is None and self.raw_value is not None:
                 self.pp_value = pp_functions.post_process(self.pp_func, self.raw_value, *self.pp_params)
             return self.pp_value
+
+    def read(self, data):
+        """ data is a bytearray which will be converted to raw data """
+        self.set(struct.unpack(self.pack, data)[0])
 
     def pretty_header(self):
         return self.pf.fmtstr(string=True) % self.name

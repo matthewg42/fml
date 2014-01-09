@@ -21,7 +21,7 @@ class PrettyFormat:
         self.pad = pad
 
     def __repr__(self):
-        return "PrettyFormat(width=%d, align='%s', fmt='%s', pad='%s')" % (self.width, self.align, self.fmt, self.pad)
+        return "PrettyFormat(width=%d, align='%s', fmt='%s', pad='%s')@%s" % (self.width, self.align, self.fmt, self.pad, hex(id(self)))
 
     def fmtstr(self, string=False):
         """ returns a printf style format string for this PrettyFormat, 
@@ -41,12 +41,17 @@ class PrettyFormat:
         try:
             r = self.fmtstr(string) % value
         except:
-            r = '#ERR'
+            r = self.fmtstr(True) % '#ERR'
             pass
         return r
 
-    def underline(self, char='-'):
+    def underline(self, char='_'):
         return char * self.width
+
+    def expand_to_fit(self, s):
+        if len(s) > self.width:
+            self.width = len(s)
+           
 
 # define some ready-to-use formats
 PfInt       = PrettyFormat(width=6,  align='right', fmt='d')

@@ -2,6 +2,7 @@
 
 import logging
 import mb_crc
+import time
 from struct import pack, unpack
 from mb_register import MBRegister
 
@@ -46,6 +47,7 @@ class MBSlave:
     def clear_regs(self):
         for r_add, register in self.registers.items():
             register.clear()
+        self.last_fetched = time.time()
 
     def set_values(self, reply):
         # decode the reply
@@ -68,6 +70,7 @@ class MBSlave:
             register.read(reply[:register.size])
             reply = reply[register.size:]  # pop from the front of the reply...
             # if log: log.debug('reply now: %s' % repr(reply))
+        self.last_fetched = time.time()
 
 if __name__ == '__main__':
     import pp_functions

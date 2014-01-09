@@ -95,6 +95,7 @@ if __name__ == '__main__':
     aparser = argparse.ArgumentParser(description='Modbus Register Logging Daemon')
     aparser.add_argument('--config-file', dest='config_file', default='/etc/fml.conf', help='specify the path to the config file')
     aparser.add_argument('--daemon', dest='daemon', action='store_const', const=True, default=False, help='run in daemon mode (detach, log to syslog, output to file)')
+    aparser.add_argument('--errors', dest='logging_level', action='store_const', const=logging.ERROR, default=None, help='set debugging level to errors only')
     aparser.add_argument('--debug', dest='logging_level', action='store_const', const=logging.DEBUG, default=None, help='write debugging output in the log')
     aparser.add_argument('--dump-config', dest='one_time_operation', action='store_const', const='dump', default=None, help='print fml configuratio and exit')
     aparser.add_argument('--format', dest='output_format', default=None, help='write in specified format (gnostic, csv, pretty or rrd)')

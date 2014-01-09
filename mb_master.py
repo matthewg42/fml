@@ -2,6 +2,7 @@
 
 import ConfigParser
 import serial
+import copy
 import re
 import os
 import sys
@@ -109,7 +110,7 @@ class MBMaster:
                     #    repr(raw_type),
                     #    repr(pp_type),
                     #    repr(pf) )
-                    slave.add_register(MBRegister(address=address, name=name, mb_type=raw_type, pp_func=pp_func, pp_params=pp_params, pp_type=pp_type, pf=pf))
+                    slave.add_register(MBRegister(address=address, name=name, mb_type=raw_type, pp_func=pp_func, pp_params=pp_params, pp_type=pp_type, pf=copy.copy(pf)))
                 slave.update_mb_query()
                 self.add_slave(slave)
             except Exception as e:
@@ -245,16 +246,58 @@ class MBMaster:
         for s_add, slave in self.slaves.items():
             for r_add, register in slave.registers.items():
                 if register.display:
-                    a.append(register.name.replace(',','\\,'))
+                    a.append('%s/%s' % ( slave.name.replace(',','\\,'), register.name.replace(',','\\,')))
         self.output_fd.write(",".join(a) + "\n")
 
     def output_data_csv(self, timestamp):
-        a = [datetime.datetime.fromtimestamp(time.time()).strftime("%Y-%m-%d %T.%f")[:-3]]
+        a = [datetime.datetime.fromtimestamp(timestamp).strftime("%Y-%m-%d %T.%f")[:-3]]
         for s_add, slave in self.slaves.items():
             for r_add, register in slave.registers.items():
                 if register.display:
                     a.append(register.pretty_value().replace(' ',''))
         self.output_fd.write(",".join(a) + "\n")
+
+    def output_headers_gnostic(self):
+        self.output_fd.write("GNOSTIC-DATA-PROTOCOL-VERSION=1.0\nDELIMITER=;\nEND-HEADER\n")
+
+    def output_data_gnostic(self, timestamp):
+        for s_add, slave in self.slaves.items():
+            for r_add, register in slave.registers.items():
+                if register.display:
+                    self.output_fd.write('%.3f;%s;%s\n' % ( slave.last_fetched, register.pretty_value().replace(' ',''), register.name ))
+
+    def output_headers_pretty(self):
+        gutter = ' '
+        h1 = []
+        h2 = []
+        ul = []
+        h1.append(' ' * 24)
+        h2.append('%-24s' % 'Time')
+        ul.append('_' * 24)
+        for s_add, slave in self.slaves.items():
+            s_begin = len(gutter.join(h2)) + len(gutter)
+            for r_add, register in slave.registers.items():
+                h2.append(register.pretty_header())
+                ul.append(register.pf.underline())
+            s_end = len(gutter.join(h2))
+            sl_text = str.center(slave.name[:s_end-s_begin], s_end-s_begin, '-')
+            if sl_text[:1] == '-':
+                sl_text = '<' + sl_text[1:]
+            if sl_text[-1:] == '-':
+                sl_text = sl_text[:-1] + '>'
+            h1.append(sl_text)
+        self.output_fd.write(gutter.join(h1) + "\n")
+        self.output_fd.write(gutter.join(h2) + "\n")
+        self.output_fd.write(gutter.join(ul) + "\n")
+
+    def output_data_pretty(self, timestamp):
+        gutter = ' '
+        a = ['%-24s' % datetime.datetime.fromtimestamp(timestamp).strftime("%Y-%m-%d %T.%f")[:-3]]
+        for s_add, slave in self.slaves.items():
+            for r_add, register in slave.registers.items():
+                if register.display:
+                    a.append(register.pretty_value())
+        self.output_fd.write(gutter.join(a) + "\n")
 
 if __name__ == '__main__':
     m = MBMaster('./fml.conf')
