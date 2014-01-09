@@ -10,7 +10,7 @@ import time
 import datetime
 import logging
 from mb_register import MBRegister
-from mb_slave import MBSlave
+from mb_slave import MBSlave, InvalidMessage
 from pretty_format import PrettyFormat, PfFloat, PfInt
 
 # TODO: remove this once we don't need test data
@@ -159,8 +159,12 @@ class MBMaster:
             loop_start_time = time.time()
             if log: log.debug('fetching from slaves...')
 
-            self.query_slaves()
-            self.output_data((loop_start_time + time.time()) / 2)  # average now and loop start to give most "middle" time... :s
+            try:
+                self.query_slaves()
+                self.output_data((loop_start_time + time.time()) / 2)  # average now and loop start to give most "middle" time... :s
+            except InvalidMessage as e:
+                if log: log.warning('bad reply: %s', str(e))
+                self.stats['errors'] += 1
 
             # If we are only running some fixed number of times, check 
             # if we're done and break out of look if so.

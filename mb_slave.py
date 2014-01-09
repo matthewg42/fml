@@ -9,6 +9,14 @@ from mb_register import MBRegister
 global log
 log = None
 
+class InvalidMessage(Exception):
+    def __init__(self, slave, reason):
+        self.address = slave.address
+        self.name = slave.name
+        self.reason = reason
+    def __str__(self):
+        return '%s in reply from slave #%d %s' % (self.reason, self.address, self.name)
+
 class MBSlave:
     def __init__(self, address, name):
         self.address = address
@@ -53,15 +61,15 @@ class MBSlave:
         # decode the reply
         if log: log.debug('decoding the reply %s' % repr(reply))
         if len(reply) < 7:
-            raise Exception("invalid reply: too short")
+            raise InvalidMessage(self, "too short")
         # check CRC
         crc = mb_crc.calculate_crc( bytearray( reply[:-2] ) )
         if bytearray(reply[-2:]) != crc:
-            raise Exception("invalid reply: bad checksum")
+            raise InvalidMessage(self, "bad checksum")
         # remove non-data items
         num_bytes = ord(reply[2])
         if len(reply) != num_bytes + 5: # address (1 byte) function (1 byte), num_bytes (1 byte), crc (2 bytes)
-            raise Exception('invalid reply: %d bytes means %d reply size, but got %d' % (num_bytes, num_bytes+5, len(reply)))
+            raise InvalidMessage(self, "wrong size")
         # strip non-payload
         reply = reply[3:][:-2] # strip reply so it's just data
         
