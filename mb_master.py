@@ -30,6 +30,7 @@ class MBMaster:
         self.stats = {'iterations': 0, 'warnings': 0, 'errors': 0}
         self.read_config_file(cl_args)
         self.output_fd = None
+        self.serial = None
 
     def read_config_file(self, cl_args={}):
         if log: log.debug('MBMaster reading config from %s' % repr(self.config_file))
@@ -179,7 +180,15 @@ class MBMaster:
         if log: log.debug('all iterations complete, exiting.')
 
     def open_serial_port(self):
-        print "TODO: open_serial_port"
+        self.serial = serial.Serial(port=self.serial_device, 
+                                    baudrate=self.serial_baud, 
+                                    parity=self.serial_parity, 
+                                    stopbits=self.serial_stopbits, 
+                                    bytesize=self.serial_bytesize, 
+                                    timeout=self.serial_timeout)
+        # add a short delay for the serial device to "warm up"
+        # if this is not done, the first traffic may get corrupted
+        time.sleep(0.15)
 
     def open_output_file(self):
         if self.output_file is None or self.output_file == '-':
