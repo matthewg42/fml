@@ -9,13 +9,11 @@ from mb_register import MBRegister
 from mb_slave import MBSlave
 from pretty_format import PrettyFormat, PfFloat, PfInt
 
+global log
+log = None
+
 class MBMaster:
-    def __init__(self, config_file="/etc/fml.conf", cl_args={}, log=None):
-        if log is not None and isinstance(log, logging.Logger):
-            self.log = log
-        else:
-            self.log = None
-        self.log = log
+    def __init__(self, config_file="/etc/fml.conf", cl_args={}):
         self.slaves = dict()
         # defaults for master configuration
         self.config_file = config_file
@@ -26,7 +24,7 @@ class MBMaster:
         self.read_config_file(cl_args)
 
     def read_config_file(self, cl_args={}):
-        if self.log: log.debug('MBMaster reading config from %s' % repr(self.config_file))
+        if log: log.debug('MBMaster reading config from %s' % repr(self.config_file))
         p = ConfigParser.SafeConfigParser( {
             'serial_device':    '/dev/ttyUSB0',
             'serial_baud':      '115200',
@@ -103,7 +101,7 @@ class MBMaster:
                 print "ERROR: failed add slave for section '%s' because %s/%s" % (sec, type(e), e)
                 raise
 
-        if self.log:
+        if log:
             s = "MBMaster loaded configuration:\n%s\n%s" % (repr(self), self.dump_config())
             for line in s.split('\n'):
                 log.info(line)
@@ -136,26 +134,33 @@ class MBMaster:
             raise TypeError('must be MBSlave')
         self.slaves[slave.address] = slave
 
-    def run(self):
+    def run(self):  
+        num_warnings = 0
+        num_errors = 0
         while True:
             loop_start_time = time.time()
-            
-            print "fetching..."
+            if log: log.debug('fetching from slaves...')
 
+            for address, slave in self.slaves.items():
+                if log: log.debug('fetching slave address=%d, name=%s' % (slave.address, slave.name))
+                time.sleep(0.01)
             # If we are only running some fixed number of times, check 
             # if we're done and break out of look if so.
             if self.times is not None:
                 self.times -= 1
                 if self.times == 0:
                     break
-
             # Decide how long to wait until the delay between fetches is
             # done.  Warn if we've gone over it.
-            wait_time = loop_start_time + self.wait - time.time()
+            fetch_time = time.time() - loop_start_time
+            wait_time = self.interval - fetch_time
             if wait_time > 0:
+                if log: log.debug('fetching slaves took %.3f secs, waiting for %.3f for interval' % (fetch_time, wait_time))
                 time.sleep(wait_time)
-            #else:
-            #    self.log.warning
+            else:
+                if log: log.warning('fetching slaves took %.3f sec, interval=%.3f. Consider raising interval.' % ( fetch_time, self.interval ))
+                num_warnings += 1
+        if log: log.debug('all iterations complete, exiting.')
 
 if __name__ == '__main__':
     m = MBMaster('./fml.conf')
