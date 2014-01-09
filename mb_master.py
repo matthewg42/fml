@@ -3,6 +3,8 @@
 import ConfigParser
 import serial
 import re
+import os
+import sys
 import time
 import datetime
 import logging
@@ -27,9 +29,15 @@ class MBMaster:
         self.daemon = False
         self.stats = {'iterations': 0, 'warnings': 0, 'errors': 0}
         self.read_config_file(cl_args)
+        self.output_fd = None
 
     def read_config_file(self, cl_args={}):
         if log: log.debug('MBMaster reading config from %s' % repr(self.config_file))
+
+        # some args do not come from the config file - only from command line args, so we'll set them here if they exist
+        if 'times' in cl_args: self.times = cl_args['times'] 
+        if 'daemon' in cl_args: self.daemon = cl_args['daemon'] 
+
         p = ConfigParser.SafeConfigParser( {
             'serial_device':    '/dev/ttyUSB0',
             'serial_baud':      '115200',
@@ -56,11 +64,11 @@ class MBMaster:
         self.interval        = cl_args['interval']        if 'interval'        in cl_args else p.getfloat('master','interval')
         self.raw_mode        = cl_args['raw_mode']        if 'raw_mode'        in cl_args else p.getboolean('master','raw_mode')
         self.output_format   = cl_args['output_format']   if 'output_format'   in cl_args else p.get('master','output_format')
-        self.output_file     = cl_args['output_file']     if 'output_file'     in cl_args else p.get('master','output_file', True)
+        if self.daemon:
+            self.output_file     = cl_args['output_file']     if 'output_file'     in cl_args else p.get('master','output_file', True)
+        else:
+            self.output_file = cl_args['output_file'] if 'output_file' in cl_args else None
 
-        # some args do not come from the config file - only from command line args, so we'll set them here if they exist
-        if 'times' in cl_args: self.times = cl_args['times'] 
-        if 'daemon' in cl_args: self.daemon = cl_args['daemon'] 
 
         # Now read slave sections
         for sec in [s for s in p.sections() if s[:6] == 'slave_']:
@@ -174,7 +182,14 @@ class MBMaster:
         print "TODO: open_serial_port"
 
     def open_output_file(self):
-        print "TODO: open_output_file"
+        if self.output_file is None or self.output_file == '-':
+            self.output_fd = sys.stdout
+        else:
+            self.output_file = datetime.datetime.now().strftime(self.output_file)
+            if log: log.info('output file is: %s' % self.output_file)
+            if os.path.exists(self.output_file):
+                raise Exception("output file already exists: %s" % self.output_file)
+            self.output_fd = open(self.output_file, 'w')
 
     def output_headers(self):
         if self.output_format == 'csv':
@@ -215,8 +230,7 @@ class MBMaster:
             for r_add, register in slave.registers.items():
                 if register.display:
                     a.append(register.name.replace(',','\\,'))
-        # TODO proper output file
-        print ",".join(a)
+        self.output_fd.write(",".join(a) + "\n")
 
     def output_data_csv(self, timestamp):
         a = [datetime.datetime.fromtimestamp(time.time()).strftime("%Y-%m-%d %T.%f")[:-3]]
@@ -224,8 +238,7 @@ class MBMaster:
             for r_add, register in slave.registers.items():
                 if register.display:
                     a.append(register.pretty_value().replace(' ',''))
-        # TODO proper output file
-        print ",".join(a)
+        self.output_fd.write(",".join(a) + "\n")
 
 if __name__ == '__main__':
     m = MBMaster('./fml.conf')
