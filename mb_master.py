@@ -4,20 +4,30 @@ import ConfigParser
 import serial
 import re
 import time
+import logging
 from mb_register import MBRegister
 from mb_slave import MBSlave
 from pretty_format import PrettyFormat, PfFloat, PfInt
 
 class MBMaster:
-    def __init__(self, config_file="/etc/fml.conf"):
+    def __init__(self, config_file="/etc/fml.conf", cl_args={}, log=None):
+        if log is not None and isinstance(log, logging.Logger):
+            self.log = log
+        else:
+            self.log = None
+        self.log = log
         self.slaves = dict()
         # defaults for master configuration
         self.config_file = config_file
         self.times = None
-        self.read_config_file()
+        self.output_file = None
+        self.output_format = None
+        self.daemon = False
+        self.read_config_file(cl_args)
 
-    def read_config_file(self):
-        parser = ConfigParser.SafeConfigParser( {
+    def read_config_file(self, cl_args={}):
+        if self.log: log.debug('MBMaster reading config from %s' % repr(self.config_file))
+        p = ConfigParser.SafeConfigParser( {
             'serial_device':    '/dev/ttyUSB0',
             'serial_baud':      '115200',
             'serial_bytesize':  '8',
@@ -26,29 +36,42 @@ class MBMaster:
             'serial_timeout':   '0.015',
             'raw_mode':         'false',
             'interval':         '0.5',
+            'output_format':    'pretty',
+            'output_file':      None
         } )
-        parser.read(self.config_file)
-        self.serial_device = parser.get('master','serial_device')
-        self.serial_baud = parser.getint('master','serial_baud')
-        self.serial_bytesize = parser.getint('master','serial_bytesize')
-        self.serial_parity = parser.get('master','serial_parity',{'none':serial.PARITY_NONE, 'odd':serial.PARITY_ODD, 'even': serial.PARITY_EVEN, 'mark': serial.PARITY_MARK})
-        self.serial_stopbits = parser.getint('master','serial_stopbits')
-        self.serial_timeout = parser.getfloat('master','serial_timeout')
-        self.interval = parser.getfloat('master','interval')
+        p.read(self.config_file)
+        self.serial_device   = cl_args['serial_device']   if 'serial_device'   in cl_args else p.get('master','serial_device')
+        self.serial_baud     = cl_args['serial_baud']     if 'serial_baud'     in cl_args else p.getint('master','serial_baud')
+        self.serial_bytesize = cl_args['serial_bytesize'] if 'serial_bytesize' in cl_args else p.getint('master','serial_bytesize')
+        self.serial_parity   = cl_args['serial_parity']   if 'serial_parity'   in cl_args else p.get('master','serial_parity')
+        self.serial_parity = {  'none':serial.PARITY_NONE, 
+                                'odd':serial.PARITY_ODD, 
+                                'even': serial.PARITY_EVEN, 
+                                'mark': serial.PARITY_MARK }[self.serial_parity]
+        self.serial_stopbits = cl_args['serial_stopbits'] if 'serial_stopbits' in cl_args else p.getint('master','serial_stopbits')
+        self.serial_timeout  = cl_args['serial_timeout']  if 'serial_timeout'  in cl_args else p.getfloat('master','serial_timeout')
+        self.interval        = cl_args['interval']        if 'interval'        in cl_args else p.getfloat('master','interval')
+        self.raw_mode        = cl_args['raw_mode']        if 'raw_mode'        in cl_args else p.getboolean('master','raw_mode')
+        self.output_format   = cl_args['output_format']   if 'output_format'   in cl_args else p.get('master','output_format')
+        self.output_file     = cl_args['output_file']     if 'output_file'     in cl_args else p.get('master','output_file', True)
+
+        # some args do not come from the config file - only from command line args, so we'll set them here if they exist
+        if 'times' in cl_args: self.times = cl_args['times'] 
+        if 'daemon' in cl_args: self.daemon = cl_args['daemon'] 
 
         # Now read slave sections
-        for sec in [s for s in parser.sections() if s[:6] == 'slave_']:
+        for sec in [s for s in p.sections() if s[:6] == 'slave_']:
             try:
                 address = int(sec[6:])
-                if 'name' in [s[0] for s in parser.items(sec)]:
-                    name = parser.get(sec,'name')
+                if 'name' in [s[0] for s in p.items(sec)]:
+                    name = p.get(sec,'name')
                 else:
                     name = sec
                 slave = MBSlave(address = address, name = name)
 
                 # extract register details
                 rexp = re.compile('^r(\d+)_name$')
-                for item in [i for i in parser.items(sec) if rexp.match(i[0]) is not None]:
+                for item in [i for i in p.items(sec) if rexp.match(i[0]) is not None]:
                     addr_str = rexp.match(item[0]).groups()[0]
                     address = int(addr_str)
                     name = item[1]
@@ -56,14 +79,14 @@ class MBMaster:
                     pp_params = []
                     raw_type = 'uint16'
                     pp_type = 'float'
-                    if 'r%s_pp_fn'%addr_str in [s[0] for s in parser.items(sec)]:
-                        pp_func = parser.get(sec, 'r%s_pp_fn'%addr_str)
-                    if 'r%s_pp_param'%addr_str in [s[0] for s in parser.items(sec)]:
-                        pp_params = parser.get(sec, 'r%s_pp_param'%addr_str).split(',')
-                    if 'r%s_raw_type'%addr_str in [s[0] for s in parser.items(sec)]:
-                        raw_type = parser.get(sec, 'r%s_raw_type'%addr_str)
-                    if 'r%s_pp_type'%addr_str in [s[0] for s in parser.items(sec)]:
-                        pp_type = parser.get(sec, 'r%s_pp_type'%addr_str)
+                    if 'r%s_pp_fn'%addr_str in [s[0] for s in p.items(sec)]:
+                        pp_func = p.get(sec, 'r%s_pp_fn'%addr_str)
+                    if 'r%s_pp_param'%addr_str in [s[0] for s in p.items(sec)]:
+                        pp_params = p.get(sec, 'r%s_pp_param'%addr_str).split(',')
+                    if 'r%s_raw_type'%addr_str in [s[0] for s in p.items(sec)]:
+                        raw_type = p.get(sec, 'r%s_raw_type'%addr_str)
+                    if 'r%s_pp_type'%addr_str in [s[0] for s in p.items(sec)]:
+                        pp_type = p.get(sec, 'r%s_pp_type'%addr_str)
                     pf = {'float': PfFloat, 'int': PfInt}[pp_type]
                     #print "addr_str=%s, address=%s, name=%s, pp_func=%s, pp_params=%s, raw_type=%s, pp_type=%s, pf=%s" % (
                     #    repr(addr_str),
@@ -80,21 +103,32 @@ class MBMaster:
                 print "ERROR: failed add slave for section '%s' because %s/%s" % (sec, type(e), e)
                 raise
 
+        if self.log:
+            s = "MBMaster loaded configuration:\n%s\n%s" % (repr(self), self.dump_config())
+            for line in s.split('\n'):
+                log.info(line)
+
     def __repr__(self):
         return "MBMaster(config_file='%s')" % self.config_file
 
     def dump_config(self):
-        s = "serial_device=%s, serial_baud=%s, serial_bytesize=%s, serial_parity=%s, serial_stopbits=%s, serial_timeout=%s, interval=%s" % (
+        s = "serial_device=%s, serial_baud=%s, serial_bytesize=%s, serial_parity=%s, serial_stopbits=%s, serial_timeout=%s" % (
                 repr(self.serial_device),
                 repr(self.serial_baud),
                 repr(self.serial_bytesize),
                 repr(self.serial_parity),
                 repr(self.serial_stopbits),
-                repr(self.serial_timeout),
-                repr(self.interval) )
-        s = s + "\nSlaves:"
+                repr(self.serial_timeout))
+        s += "\ndaemon=%s, times=%s, interval=%s, raw_mode=%s, output_file=%s, output_format=%s" % (
+                repr(self.daemon),
+                repr(self.times),
+                repr(self.interval),
+                repr(self.raw_mode),
+                repr(self.output_file),
+                repr(self.output_format) )
+        s += "\nSlaves:"
         for sl in self.slaves.keys():
-            s = s + '\n+ %s' % repr(self.slaves[sl]).replace('\n', '\n - ')
+            s += '\n+ %s' % repr(self.slaves[sl]).replace('\n', '\n - ')
         return s
 
     def add_slave(self, slave):
