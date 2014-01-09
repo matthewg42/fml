@@ -3,27 +3,29 @@
 import ConfigParser
 import serial
 import re
+import time
 from mb_register import MBRegister
 from mb_slave import MBSlave
 from pretty_format import PrettyFormat, PfFloat, PfInt
 
 class MBMaster:
-    def __init__(self, config_file="/etc/phealth.conf"):
+    def __init__(self, config_file="/etc/fml.conf"):
         self.slaves = dict()
         # defaults for master configuration
         self.config_file = config_file
+        self.times = None
         self.read_config_file()
 
     def read_config_file(self):
         parser = ConfigParser.SafeConfigParser( {
-            'serial_device':     '/dev/ttyUSB0',
-            'serial_baud':       '115200',
-            'serial_bytesize':   '8',
-            'serial_parity':     'none',
-            'serial_stopbits':   '2',
-            'serial_timeout':    '0.015',
-            'raw_mode':          'false',
-            'poll_time':         '0.5',
+            'serial_device':    '/dev/ttyUSB0',
+            'serial_baud':      '115200',
+            'serial_bytesize':  '8',
+            'serial_parity':    'none',
+            'serial_stopbits':  '2',
+            'serial_timeout':   '0.015',
+            'raw_mode':         'false',
+            'interval':         '0.5',
         } )
         parser.read(self.config_file)
         self.serial_device = parser.get('master','serial_device')
@@ -32,7 +34,7 @@ class MBMaster:
         self.serial_parity = parser.get('master','serial_parity',{'none':serial.PARITY_NONE, 'odd':serial.PARITY_ODD, 'even': serial.PARITY_EVEN, 'mark': serial.PARITY_MARK})
         self.serial_stopbits = parser.getint('master','serial_stopbits')
         self.serial_timeout = parser.getfloat('master','serial_timeout')
-        self.poll_time = parser.getfloat('master','poll_time')
+        self.interval = parser.getfloat('master','interval')
 
         # Now read slave sections
         for sec in [s for s in parser.sections() if s[:6] == 'slave_']:
@@ -78,19 +80,18 @@ class MBMaster:
                 print "ERROR: failed add slave for section '%s' because %s/%s" % (sec, type(e), e)
                 raise
 
-
     def __repr__(self):
         return "MBMaster(config_file='%s')" % self.config_file
 
     def repr_config(self):
-        s = "serial_device=%s, serial_baud=%s, serial_bytesize=%s, serial_parity=%s, serial_stopbits=%s, serial_timeout=%s, poll_time=%s" % (
+        s = "serial_device=%s, serial_baud=%s, serial_bytesize=%s, serial_parity=%s, serial_stopbits=%s, serial_timeout=%s, interval=%s" % (
                 repr(self.serial_device),
                 repr(self.serial_baud),
                 repr(self.serial_bytesize),
                 repr(self.serial_parity),
                 repr(self.serial_stopbits),
                 repr(self.serial_timeout),
-                repr(self.poll_time) )
+                repr(self.interval) )
         s = s + "\nSlaves:"
         for sl in self.slaves.keys():
             s = s + '\n+ %s' % repr(self.slaves[sl])
@@ -101,7 +102,28 @@ class MBMaster:
             raise TypeError('must be MBSlave')
         self.slaves[slave.address] = slave
 
+    def run(self):
+        while True:
+            loop_start_time = time.time()
+            
+            print "fetching..."
+
+            # If we are only running some fixed number of times, check 
+            # if we're done and break out of look if so.
+            if self.times is not None:
+                self.times -= 1
+                if self.times == 0:
+                    break
+
+            # Decide how long to wait until the delay between fetches is
+            # done.  Warn if we've gone over it.
+            wait_time = loop_start_time + self.wait - time.time()
+            if wait_time > 0:
+                time.sleep(wait_time)
+            #else:
+            #    self.log.warning
+
 if __name__ == '__main__':
-    m = MBMaster('./phealth.conf')
+    m = MBMaster('./fml.conf')
     print repr(m)
     print m.repr_config()

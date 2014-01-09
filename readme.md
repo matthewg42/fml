@@ -1,0 +1,97 @@
+FML : Fast Modbus Logger
+========================
+
+FML acts as a modbus master, collects and logs data from one or more  
+modbus slaves over a serial connection.  
+
+Output formats
+--------------
+
+- File modes (data is appened to a file or sent to stdout)
+    - CSV
+    - Gnostic
+    - Pretty-printed / tabular
+- Database mode using rrd
+
+
+Run modes
+---------
+
+FML can run as a daemon (a process which runs in the background, writing
+output to files and logging to syslog), or in user/script mode - executed
+from a login shell or called from a script to produce output which is
+typically printed to a terminal or re-directed into a file.
+
+Mode selection is done using the --daemon command line option - if this
+option is used when FML is invoked, it will detach from the calling
+terminal and run in the background.
+
+
+Single instance
+---------------
+
+FML communicates with slave modbus modes using a serial interface.
+Only one instace of FML should use a serial interface at a time to
+prevent serial communications getting corrupted.
+
+
+Configuration
+-------------
+
+Configuration is stored in the file `/etc/fml.conf`. Some settings
+can also be set using command line options. Command line options take
+precedence over settings in the confguration file.
+
+Each modbus slave device which is connected using the serial interface
+should have a `slave_<address>` section in the configuration file (where
+`<address>` is the numerical ID of the slave device).  This section
+defines the registers for that slave device. An example should make
+it clearer:
+
+`
+[slave_1]
+name = WeatherStation
+
+r0_name = Temperature sensor
+r1_name = Pressure sensor
+r2_name = Humidity sensor
+`
+In this case, three registers are defined which return various bits
+of data from a small weather station.  Data is expected to come back
+as a 16 bit integer value.  It is possible to specify a funcion which
+will post-process this value, and parameters to that function for the
+specified register.  This makes it possible to have different calibrations
+for different devices:
+
+`
+r0_name = Temperature sensor
+r0_pp_func = post_process_temp
+r0_pp_params = 1.076,2
+`
+
+Post processing functions must be defined in the program and registered
+using `pp_functions.register()`.
+
+
+Program flow summary
+--------------------
+
+1. Parse command-line arguments
+2. Logging init
+3. Special operations (kill / list / show config)
+4. Create MBMaster
+    1. load slaves / regs from config file
+5. Run
+    1. Output headers
+    2. Loop
+	1. Poll slaves
+	2. Format and write output
+
+
+Future development
+------------------
+
+- One instance per serial interface
+- Multiple instances per serial port with a lockfile / shared memory being used to prevent serial collisions?
+- Other modbus data types
+
