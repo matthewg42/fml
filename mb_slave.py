@@ -10,7 +10,11 @@ class MBSlave:
         self.last_fetched = None
 
     def __repr__(self):
-        s = 'MBSlave address=%d, name="%s", has %d registers' % ( self.address, self.name, len(self.registers) )
+        s = 'MBSlave address=%d, name="%s", has %d register%s%s' % ( 
+            self.address, 
+            self.name, len(self.registers), 
+            ('s' if len(self.registers) != 1 else '') ,
+            (':' if len(self.registers) > 0 else '') )
         for r in [repr(self.registers[r]) for r in self.registers]:
             s = s + "\n%s" % r
         return s

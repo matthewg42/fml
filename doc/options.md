@@ -10,10 +10,11 @@ Command line only settings
 --------------------------
 
 - --help [e]
+- --config-file=<path> [id]
 - --daemon [selects i / d]
 - --log-file=<path> [id]
-- --show-config [e]
-- --kill [e]
+- --dump-config [e]
+- --kill [id]
 - --list-procs [e]
 - --times [id]
 
@@ -25,13 +26,13 @@ Config file only settings
 Config file settings which command-line over-rides
 --------------------------------------------------
 
-- output_file / --output-file [u,d]
-- output_format / --format [u,d]
-- log_level / --debug / --quiet [u,d]
-- interval / --interval [u,d]
-- serial_device / --serial-device [u,d]
-- serial_baud / --serial-baud [u,d]
-- serial_bytesize / --serial-bytesize [u,d]
-- serial_parity / --serial-parity [u,d]
-- serial_stopbits / --serial-stopbits [u,d]
+- output_file / --output-file [id]
+- output_format / --format [id]
+- log_level / --debug / --quiet [id]
+- interval / --interval [id]
+- serial_device / --serial-device [id]
+- serial_baud / --serial-baud [id]
+- serial_bytesize / --serial-bytesize [id]
+- serial_parity / --serial-parity [id]
+- serial_stopbits / --serial-stopbits [id]
 

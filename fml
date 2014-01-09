@@ -1,30 +1,85 @@
 #!/usr/bin/env python
 
 from mb_master import MBMaster
-import argparser
+import argparse
+import sys
+import os
+import re
+import logging
+import ConfigParser
 
 global args, log
 
+def read_config_file():
+    global args, log
+    if not os.path.exists(args.config_file):
+        sys.stderr.write("ERROR: cannot config file does not exist: %s\n" % args.config_file)
+        sys.exit(1)
+        
+    parser = ConfigParser.SafeConfigParser( {
+        'log_level': 'warning'
+    } )
+    
+    parser.read(args.config_file)
+    if args.logging_level is None:
+        try:
+            args.logging_level = parser.get('master','logging_level',{'debug':logging.DEBUG, 'error':logging.ERROR, 'warning':logging.WARNING, 'info':logging.INFO })
+        except KeyError:
+            sys.stderr.write("logging_level setting in config file in invalid.  Assuming 'warning'\n")
+            pass
+        args.logging_level = logging.WARNING
+
 def init_log():
+    global args, log
     if args.log_file is not None and args.daemon == False:
         logging.basicConfig(format='%(asctime)s %(name)s[%(process)d] %(levelname)s: %(message)s', filename=args.log_file)
     else:
         logging.basicConfig(format='%(asctime)s %(name)s[%(process)d] %(levelname)s: %(message)s')
-    if args.log_level is not None:
-        log.setLevel(args.log_level_override)
-    else:
+    log = logging.getLogger('fml')
+    if args.daemon:
+        log.setLevel(args.logging_level)
+        formatter = logging.Formatter('%(name)s[%(process)d]: %(levelname)s %(message)s')
+        handler = logging.handlers.SysLogHandler('/dev/log')
+        handler.setFormatter(formatter)
+        log.addHandler(handler)
 
 if __name__ == '__main__':
+    global args, log
     aparser = argparse.ArgumentParser(description='Modbus Register Logging Daemon')
-    aparser.add_argument('daemon', dest='daemon', action='store_const', const=True, default=False, help='run in daemon mode (must be root, log to syslog, file output)')
-    aparser.add_argument('debug', dest='log_level', action='store_const', const=logging.DEBUG, default=None, help='request debugging output in the log (over-rides config file setting)')
-    aparser.add_argument('config-file', dest='config_file', default='/etc/fml.conf', help='specify the path to the config file')
-    aparser.add_argument('log-file', dest='log_file', default=None, help='send logging to this file instead of stderr')
+    aparser.add_argument('--config-file', dest='config_file', default='/etc/fml.conf', help='specify the path to the config file')
+    aparser.add_argument('--daemon', dest='daemon', action='store_const', const=True, default=False, help='run in daemon mode (detach, log to syslog, output to file)')
+    aparser.add_argument('--debug', dest='logging_level', action='store_const', const=logging.DEBUG, default=None, help='write debugging output in the log')
+    aparser.add_argument('--dump-config', dest='one_time_operation', action='store_const', const='dump', default=None, help='print fml configuratio and exit')
+    aparser.add_argument('--interval', default=None, type=float, help='how many seconds between fetching data from slaves')
+    aparser.add_argument('--list-fml', dest='one_time_operation', action='store_const', const='list', default=None, help='show a list of fml processes which are running')
+    aparser.add_argument('--log-file', dest='log_file', default=None, help='send logging to this file instead of stderr (has no effect when in daemon mode)')
+    aparser.add_argument('--kill', action='store_const', const=True, default=False, help='kill any instances of fml which are running before starting')
+    aparser.add_argument('--output-file', dest='output_file', default=None, help='write output to specified file')
+    aparser.add_argument('--format', dest='output_format', default=None, help='write in specified format (gnostic, csv, pretty or rrd)')
+    aparser.add_argument('--serial-device', dest='serial_device', default=None, help='specify serial device node to connect with, e.g. /dev/ttyS0')
+    aparser.add_argument('--serial-baud', dest='serial_baud', type=int, default=None, help='specify baud rate for serial communications')
+    aparser.add_argument('--serial-bytesize', dest='serial_bytesize', type=int, default=None, help='specify bytesize for serial communications')
+    aparser.add_argument('--serial-parity', dest='serial_parity', default=None, help='specify parity for serial communications (none, mark, even, or odd)')
+    aparser.add_argument('--serial-stopbits', dest='serial_stopbits', type=int, default=None, help='specify number of stop bits for serial communications')
+    aparser.add_argument('--times', default=None, type=int, help='fetch from slaves a specified number of times and then exit')
     args = aparser.parse_args()
 
+    read_config_file()
     init_log()
 
-    master = MBMaster(args._config_file)
-    master.monitor()
+    if args.serial_parity is not None:
+        try:
+            args.serial_parity = {'none': serial.PARITY_NONE, 'even': serial.PARITY_EVEN, 'odd': serial.PARITY_ODD, 'mark': serial.PARITY_MARK}[args.serial_parity]
+        except KeyError:
+            log.error('specified parity %s is invalid' % args.serial_parity)
+            sys.exit(1)
 
+    if args.one_time_operation == 'dump':
+        master = MBMaster(args.config_file)
+        # hide PrettyFormatter details cos it makes the output too wide with little benefit
+        print repr(master)
+        print re.sub(r'pf=[^\)]*\), ', r'', master.dump_config())
+        sys.exit(0)
+
+    log.error('main loop not implemented yet')
 

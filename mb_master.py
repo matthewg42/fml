@@ -83,7 +83,7 @@ class MBMaster:
     def __repr__(self):
         return "MBMaster(config_file='%s')" % self.config_file
 
-    def repr_config(self):
+    def dump_config(self):
         s = "serial_device=%s, serial_baud=%s, serial_bytesize=%s, serial_parity=%s, serial_stopbits=%s, serial_timeout=%s, interval=%s" % (
                 repr(self.serial_device),
                 repr(self.serial_baud),
@@ -94,7 +94,7 @@ class MBMaster:
                 repr(self.interval) )
         s = s + "\nSlaves:"
         for sl in self.slaves.keys():
-            s = s + '\n+ %s' % repr(self.slaves[sl])
+            s = s + '\n+ %s' % repr(self.slaves[sl]).replace('\n', '\n - ')
         return s
 
     def add_slave(self, slave):
@@ -126,4 +126,5 @@ class MBMaster:
 if __name__ == '__main__':
     m = MBMaster('./fml.conf')
     print repr(m)
-    print m.repr_config()
+    print m.dump_config()
+
