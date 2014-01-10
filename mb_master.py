@@ -12,6 +12,7 @@ import logging
 from mb_register import MBRegister
 from mb_slave import MBSlave, InvalidMessage
 from pretty_format import PrettyFormat, PfFloat, PfInt
+from mb_formatter import CSVFormatter, GnosticFormatter, PrettyFormatter
 
 global log
 log = None
@@ -26,6 +27,7 @@ class MBMaster:
         self.output_format = None
         self.daemon = False
         self.stats = {'iterations': 0, 'warnings': 0, 'errors': 0}
+        self.formatters = []
         self.read_config_file(cl_args)
         self.output_fd = None
         self.serial = None
@@ -68,6 +70,15 @@ class MBMaster:
         else:
             self.output_file = cl_args['output_file'] if 'output_file' in cl_args else None
 
+        # Create a formatter object
+        if self.output_format == 'csv':
+            self.formatters.append(CSVFormatter(self))
+        elif self.output_format == 'gnostic':
+            self.formatters.append(GnosticFormatter(self))
+        elif self.output_format == 'pretty':
+            self.formatters.append(PrettyFormatter(self))
+        elif self.output_format is not None:
+            raise ValueError("output_format should be 'pretty', 'gnostic', or 'csv', but %s was specified" % repr(self.output_format))
 
         # Now read slave sections
         for sec in [s for s in p.sections() if s[:6] == 'slave_']:
@@ -216,16 +227,8 @@ class MBMaster:
             self.output_fd = open(self.output_file, 'w')
 
     def output_headers(self):
-        if self.output_format == 'csv':
-            self.output_headers_csv()
-        elif self.output_format == 'gnostic':
-            self.output_headers_gnostic()
-        elif self.output_format == 'pretty':
-            self.output_headers_pretty()
-        elif self.output_format == 'rrd':
-            self.output_headers_rrd()
-        else:
-            raise ValueError('unknown output format %s' % repr(self.output_format))
+        for f in self.formatters:
+            f.output_header()
 
     def query_slaves(self):
         for s_add, slave in self.slaves.items():
@@ -243,74 +246,8 @@ class MBMaster:
                 slave.set_values(reply)
 
     def output_data(self, timestamp):
-        if self.output_format == 'csv':
-            self.output_data_csv(timestamp)
-        elif self.output_format == 'gnostic':
-            self.output_data_gnostic(timestamp)
-        elif self.output_format == 'pretty':
-            self.output_data_pretty(timestamp)
-        elif self.output_format == 'rrd':
-            self.output_data_rrd(timestamp)
-        else:
-            raise ValueError('unknown output format %s' % repr(self.output_format))
-
-    def output_headers_csv(self):
-        a = ['timestamp']
-        for s_add, slave in sorted(self.slaves.items()):
-            for r_add, register in sorted(slave.registers.items()):
-                if register.display:
-                    a.append('%s/%s' % ( slave.name.replace(',','\\,'), register.name.replace(',','\\,')))
-        self.output_fd.write(",".join(a) + "\n")
-
-    def output_data_csv(self, timestamp):
-        a = [datetime.datetime.fromtimestamp(timestamp).strftime("%Y-%m-%d %T.%f")[:-3]]
-        for s_add, slave in sorted(self.slaves.items()):
-            for r_add, register in sorted(slave.registers.items()):
-                if register.display:
-                    a.append(register.pretty_value().replace(' ',''))
-        self.output_fd.write(",".join(a) + "\n")
-
-    def output_headers_gnostic(self):
-        self.output_fd.write("GNOSTIC-DATA-PROTOCOL-VERSION=1.0\nDELIMITER=;\nEND-HEADER\n")
-
-    def output_data_gnostic(self, timestamp):
-        for s_add, slave in sorted(self.slaves.items()):
-            for r_add, register in sorted(slave.registers.items()):
-                if register.display:
-                    self.output_fd.write('%.3f;%s;%s\n' % ( slave.last_fetched, register.pretty_value().replace(' ',''), register.name ))
-
-    def output_headers_pretty(self):
-        gutter = ' '
-        h1 = []
-        h2 = []
-        ul = []
-        h1.append(' ' * 24)
-        h2.append('%-24s' % 'Time')
-        ul.append('_' * 24)
-        for s_add, slave in sorted(self.slaves.items()):
-            s_begin = len(gutter.join(h2)) + len(gutter)
-            for r_add, register in sorted(slave.registers.items()):
-                h2.append(register.pretty_header())
-                ul.append(register.pf.underline())
-            s_end = len(gutter.join(h2))
-            sl_text = str.center(slave.name[:s_end-s_begin], s_end-s_begin, '-')
-            if sl_text[:1] == '-':
-                sl_text = '<' + sl_text[1:]
-            if sl_text[-1:] == '-':
-                sl_text = sl_text[:-1] + '>'
-            h1.append(sl_text)
-        self.output_fd.write(gutter.join(h1) + "\n")
-        self.output_fd.write(gutter.join(h2) + "\n")
-        self.output_fd.write(gutter.join(ul) + "\n\n")
-
-    def output_data_pretty(self, timestamp):
-        gutter = ' '
-        a = ['%-24s' % datetime.datetime.fromtimestamp(timestamp).strftime("%Y-%m-%d %T.%f")[:-3]]
-        for s_add, slave in sorted(self.slaves.items()):
-            for r_add, register in sorted(slave.registers.items()):
-                if register.display:
-                    a.append(register.pretty_value())
-        self.output_fd.write(gutter.join(a) + "\n")
+        for f in self.formatters:
+            f.output_data(timestamp)
 
 if __name__ == '__main__':
     m = MBMaster('./fml.conf')
