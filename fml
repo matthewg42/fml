@@ -17,8 +17,7 @@ from mb_master import MBMaster
 import mb_master
 import mb_slave
 
-global args, log, pidfile
-pidfile = '/tmp/fml.pid'
+global args, log
 
 def read_config_file():
     global args, log
@@ -96,29 +95,21 @@ def kill_fml_instances():
     print "\nWARNING: still %d processes running. Try running with sudo?" % len(pids)
     return False
 
-def check_pidfile():
-    global pidfile
-    if os.path.exists(pidfile):
-        with open(pidfile, 'r') as f:
-            pid = f.read()
-        if pid in get_fml_pids():
-            sys.stderr.write("fml: already running with pid = %s\n" % repr(pid))
-            if not args.clobber:
-                sys.stderr.write("fml: aborting (try --clobber or --kill options)\n")
-                sys.exit(1)
-            else:
-                # try to kill it...
-                if kill_fml_instances():
-                    sys.stderr.write('fml: I clobbered other fml processes, so don wurry\n')
-                else:
-                    sys.stderr.write('fml: failed to clobbered other fml processes (unix permissions?)\n')
-                    sys.exit(1)
+def check_singleton():
+    pids=get_fml_pids()
+    
+    if len(pids) > 0:
+        sys.stderr.write("fml: already running with pid%s %s\n" % (('' if len(pids) == 1 else 's'), ', '.join([str(p) for p in pids])))
+        if not args.clobber:
+            sys.stderr.write("fml: aborting (try --clobber or --kill options)\n")
+            sys.exit(1)
         else:
-            sys.stderr.write('fml: removing stale pidfile : %s\n' % pidfile);
-            os.remove(pidfile)
-
-    with open(pidfile, 'w') as f:
-        f.write(str(os.getpid()))
+            # try to kill it...
+            if kill_fml_instances():
+                sys.stderr.write('fml: I clobbered other fml processes, so don wurry\n')
+            else:
+                sys.stderr.write('fml: failed to clobbered other fml processes (unix permissions?)\n')
+                sys.exit(1)
 
 def main():
     global args, log
@@ -144,9 +135,7 @@ def main():
         shutdown(1)
 
 def shutdown(errlevel=0):
-    global pidfile, log
-    if os.path.exists(pidfile):
-        os.remove(pidfile)
+    global log
     log.info('bye')
     sys.exit(errlevel)
 
@@ -194,7 +183,7 @@ if __name__ == '__main__':
     for sig in [signal.SIGHUP, signal.SIGTERM, signal.SIGUSR1, signal.SIGUSR2, signal.SIGQUIT, signal.SIGINT]:
         signal.signal(sig, sighandler)
 
-    check_pidfile()
+    check_singleton()
 
     if args.daemon:
         with daemon.DaemonContext(umask=0o022):
