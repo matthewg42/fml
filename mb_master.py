@@ -13,9 +13,6 @@ from mb_register import MBRegister
 from mb_slave import MBSlave, InvalidMessage
 from pretty_format import PrettyFormat, PfFloat, PfInt
 
-# TODO: remove this once we don't need test data
-import random
-
 global log
 log = None
 
@@ -84,7 +81,7 @@ class MBMaster:
 
                 # extract register details
                 rexp = re.compile('^r(\d+)_name$')
-                for item in [i for i in p.items(sec) if rexp.match(i[0]) is not None]:
+                for item in [i for i in sorted(p.items(sec)) if rexp.match(i[0]) is not None]:
                     addr_str = rexp.match(item[0]).groups()[0]
                     address = int(addr_str)
                     name = item[1]
@@ -141,7 +138,7 @@ class MBMaster:
                 repr(self.output_file),
                 repr(self.output_format) )
         s += "\nSlaves:"
-        for sl in self.slaves.keys():
+        for sl in sorted(self.slaves.keys()):
             s += '\n+ %s' % repr(self.slaves[sl]).replace('\n', '\n - ')
         return s
 
@@ -259,16 +256,16 @@ class MBMaster:
 
     def output_headers_csv(self):
         a = ['timestamp']
-        for s_add, slave in self.slaves.items():
-            for r_add, register in slave.registers.items():
+        for s_add, slave in sorted(self.slaves.items()):
+            for r_add, register in sorted(slave.registers.items()):
                 if register.display:
                     a.append('%s/%s' % ( slave.name.replace(',','\\,'), register.name.replace(',','\\,')))
         self.output_fd.write(",".join(a) + "\n")
 
     def output_data_csv(self, timestamp):
         a = [datetime.datetime.fromtimestamp(timestamp).strftime("%Y-%m-%d %T.%f")[:-3]]
-        for s_add, slave in self.slaves.items():
-            for r_add, register in slave.registers.items():
+        for s_add, slave in sorted(self.slaves.items()):
+            for r_add, register in sorted(slave.registers.items()):
                 if register.display:
                     a.append(register.pretty_value().replace(' ',''))
         self.output_fd.write(",".join(a) + "\n")
@@ -277,8 +274,8 @@ class MBMaster:
         self.output_fd.write("GNOSTIC-DATA-PROTOCOL-VERSION=1.0\nDELIMITER=;\nEND-HEADER\n")
 
     def output_data_gnostic(self, timestamp):
-        for s_add, slave in self.slaves.items():
-            for r_add, register in slave.registers.items():
+        for s_add, slave in sorted(self.slaves.items()):
+            for r_add, register in sorted(slave.registers.items()):
                 if register.display:
                     self.output_fd.write('%.3f;%s;%s\n' % ( slave.last_fetched, register.pretty_value().replace(' ',''), register.name ))
 
@@ -290,9 +287,9 @@ class MBMaster:
         h1.append(' ' * 24)
         h2.append('%-24s' % 'Time')
         ul.append('_' * 24)
-        for s_add, slave in self.slaves.items():
+        for s_add, slave in sorted(self.slaves.items()):
             s_begin = len(gutter.join(h2)) + len(gutter)
-            for r_add, register in slave.registers.items():
+            for r_add, register in sorted(slave.registers.items()):
                 h2.append(register.pretty_header())
                 ul.append(register.pf.underline())
             s_end = len(gutter.join(h2))
@@ -309,8 +306,8 @@ class MBMaster:
     def output_data_pretty(self, timestamp):
         gutter = ' '
         a = ['%-24s' % datetime.datetime.fromtimestamp(timestamp).strftime("%Y-%m-%d %T.%f")[:-3]]
-        for s_add, slave in self.slaves.items():
-            for r_add, register in slave.registers.items():
+        for s_add, slave in sorted(self.slaves.items()):
+            for r_add, register in sorted(slave.registers.items()):
                 if register.display:
                     a.append(register.pretty_value())
         self.output_fd.write(gutter.join(a) + "\n")

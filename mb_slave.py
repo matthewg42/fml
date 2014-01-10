@@ -53,8 +53,7 @@ class MBSlave:
         self.mb_query = query
 
     def clear_regs(self):
-        for r_add, register in self.registers.items():
-            register.clear()
+        [register.clear() for address, register in self.registers.items()]
         self.last_fetched = time.time()
 
     def set_values(self, reply):
@@ -74,7 +73,7 @@ class MBSlave:
         reply = reply[3:][:-2] # strip reply so it's just data
         
         # extract those values...
-        for r_add, register in self.registers.items():
+        for r_add, register in sorted(self.registers.items()):
             register.read(reply[:register.size])
             reply = reply[register.size:]  # pop from the front of the reply...
             # if log: log.debug('reply now: %s' % repr(reply))
