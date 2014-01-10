@@ -19,6 +19,7 @@ log = None
 
 class MBMaster:
     def __init__(self, config_file="/etc/fml.conf", cl_args={}):
+        if log: log.info('MBMaster config file is: %s' % repr(config_file))
         self.slaves = dict()
         # defaults for master configuration
         self.config_file = config_file
@@ -128,7 +129,7 @@ class MBMaster:
         if log:
             s = "MBMaster loaded configuration:\n%s\n%s" % (repr(self), self.dump_config())
             for line in s.split('\n'):
-                log.info(line)
+                log.debug(line)
 
     def __repr__(self):
         return "MBMaster(config_file='%s')" % self.config_file
