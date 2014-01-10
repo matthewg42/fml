@@ -151,8 +151,18 @@ class MBMaster:
         self.slaves[slave.address] = slave
 
     def run(self):  
-        self.open_serial_port()
-        self.open_output_file()
+        try:
+            self.open_serial_port()
+        except Exception as e:
+            if log: log.error('failed to open serial port: %s / %s' % (type(e), e))
+            return 1
+
+        try:
+            self.open_output_file()
+        except Exception as e:
+            if log: log.error('failed to open output file %s: %s / %s' % (repr(self.output_file), type(e), e))
+            return 1
+
         self.output_headers()
 
         while True:
@@ -165,6 +175,7 @@ class MBMaster:
             except InvalidMessage as e:
                 if log: log.warning('bad reply: %s', str(e))
                 self.stats['errors'] += 1
+                pass
 
             # If we are only running some fixed number of times, check 
             # if we're done and break out of look if so.
@@ -184,6 +195,7 @@ class MBMaster:
                 self.stats['warnings'] += 1
             self.stats['iterations'] += 1
         if log: log.debug('all iterations complete, exiting.')
+        return 0
 
     def open_serial_port(self):
         self.serial = serial.Serial(port=self.serial_device, 

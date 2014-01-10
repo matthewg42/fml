@@ -113,10 +113,9 @@ def main():
     global args, log
     read_config_file()
     init_log()
-
+    log.info('Starting')
     # create our master object, passing args (with None values removed) for over-riding config file settings
     master = MBMaster(config_file=args.config_file, cl_args={k: v for k, v in vars(args).iteritems() if v is not None})
-
     if args.one_time_operation == 'dump':
         # hide PrettyFormatter details cos it makes the output too wide with little benefit
         print repr(master)
@@ -127,8 +126,8 @@ def main():
         print r
         sys.exit(0)
 
-    master.run()
-    shutdown(0)
+    l = master.run()
+    shutdown(l)
 
 def shutdown(errlevel=0):
     global pidfile, log
@@ -179,7 +178,12 @@ if __name__ == '__main__':
 
     for sig in [signal.SIGHUP, signal.SIGTERM, signal.SIGUSR1, signal.SIGUSR2, signal.SIGQUIT, signal.SIGINT]:
         signal.signal(sig, sighandler)
+
     check_pidfile()
 
-    main()
+    if args.daemon:
+        with daemon.DaemonContext(umask=0o022):
+            main()
+    else:
+        main()
 
