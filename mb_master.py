@@ -48,7 +48,7 @@ class MBMaster:
             'serial_timeout':   '0.015',
             'raw_mode':         'false',
             'interval':         '0.5',
-            'output_format':    'pretty',
+            'output_format':    None,
             'output_file':      None
         } )
         p.read(self.config_file)
@@ -159,6 +159,10 @@ class MBMaster:
         self.slaves[slave.address] = slave
 
     def run(self):  
+        if len(self.formatters) == 0:
+            if log: log.error('no output formatters have been selected. Nothing to do.')
+            return 1
+
         try:
             self.open_serial_port()
         except Exception as e:
