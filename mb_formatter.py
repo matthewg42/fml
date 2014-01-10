@@ -34,7 +34,8 @@ class GnosticFormatter:
         for s_add, slave in sorted(self.master.slaves.items()):
             for r_add, register in sorted(slave.registers.items()):
                 if register.display:
-                    self.master.output_fd.write('%.3f;%s;%s\n' % ( slave.last_fetched, register.pretty_value().replace(' ',''), register.name ))
+                    self.master.output_fd.write('%.3f;%s;%s\n' % ( slave.last_fetched * 1000, register.pretty_value().replace(' ',''), register.name ))
+                    self.master.output_fd.flush()
 
 class PrettyFormatter:
     def __init__(self, master, gutter=' '):
