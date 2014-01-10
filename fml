@@ -132,6 +132,7 @@ def main():
         shutdown(l)
     except Exception as e:
         log.error('I have taken exception to running: %s / %s' % (e, type(e)))
+        raise
         shutdown(1)
 
 def shutdown(errlevel=0):

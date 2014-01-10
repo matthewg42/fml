@@ -110,16 +110,9 @@ class MBMaster:
                     if 'r%s_pp_type'%addr_str in [s[0] for s in p.items(sec)]:
                         pp_type = p.get(sec, 'r%s_pp_type'%addr_str)
                     pf = {'float': PfFloat, 'int': PfInt}[pp_type]
-                    #print "addr_str=%s, address=%s, name=%s, pp_func=%s, pp_params=%s, raw_type=%s, pp_type=%s, pf=%s" % (
-                    #    repr(addr_str),
-                    #    repr(address),
-                    #    repr(name),
-                    #    repr(pp_func),
-                    #    repr(pp_params),
-                    #    repr(raw_type),
-                    #    repr(pp_type),
-                    #    repr(pf) )
-                    slave.add_register(MBRegister(address=address, name=name, mb_type=raw_type, pp_func=pp_func, pp_params=pp_params, pp_type=pp_type, pf=copy.copy(pf)))
+                    disp = False if name[0] == '*' else True
+                    slave.add_register(MBRegister(address=address, name=name, mb_type=raw_type, pp_func=pp_func, pp_params=pp_params, pp_type=pp_type, pf=copy.copy(pf), display=disp))
+                        
                 slave.update_mb_query()
                 self.add_slave(slave)
             except Exception as e:

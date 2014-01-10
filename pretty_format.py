@@ -21,7 +21,7 @@ class PrettyFormat:
         self.pad = pad
 
     def __repr__(self):
-        return "PrettyFormat(width=%d, align='%s', fmt='%s', pad='%s')@%s" % (self.width, self.align, self.fmt, self.pad, hex(id(self)))
+        return "PrettyFormat(width=%d, align='%s', fmt='%s', pad='%s')" % (self.width, self.align, self.fmt, self.pad)
 
     def fmtstr(self, string=False):
         """ returns a printf style format string for this PrettyFormat, 

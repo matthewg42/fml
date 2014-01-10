@@ -52,8 +52,9 @@ class PrettyFormatter:
         for s_add, slave in sorted(self.master.slaves.items()):
             s_begin = len(self.gutter.join(h2)) + len(self.gutter)
             for r_add, register in sorted(slave.registers.items()):
-                h2.append(register.pretty_header())
-                ul.append(register.pf.underline())
+                if register.display:
+                    h2.append(register.pretty_header())
+                    ul.append(register.pf.underline())
             s_end = len(self.gutter.join(h2))
             sl_text = str.center(slave.name[:s_end-s_begin], s_end-s_begin, '-')
             if sl_text[:1] == '-':
