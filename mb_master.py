@@ -109,14 +109,14 @@ class MBMaster:
                         raw_type = p.get(sec, 'r%s_raw_type'%addr_str)
                     if 'r%s_pp_type'%addr_str in [s[0] for s in p.items(sec)]:
                         pp_type = p.get(sec, 'r%s_pp_type'%addr_str)
-                    pf = {'float': PfFloat, 'int': PfInt}[pp_type]
+                    pf = {'float': PfFloat(), 'int': PfInt()}[pp_type]
                     disp = False if name[0] == '*' else True
                     slave.add_register(MBRegister(address=address, name=name, mb_type=raw_type, pp_func=pp_func, pp_params=pp_params, pp_type=pp_type, pf=copy.copy(pf), display=disp))
                         
                 slave.update_mb_query()
                 self.add_slave(slave)
             except Exception as e:
-                print "ERROR: failed add slave for section '%s' because %s/%s" % (sec, type(e), e)
+                print "ERROR: failed add slave for section %s : %s" % (repr(sec), e)
                 raise
 
         if log:
@@ -160,13 +160,13 @@ class MBMaster:
         try:
             self.open_serial_port()
         except Exception as e:
-            if log: log.error('failed to open serial port: %s / %s' % (type(e), e))
+            if log: log.error('failed to open serial port: %s' % e)
             return 1
 
         try:
             self.open_output_file()
         except Exception as e:
-            if log: log.error('failed to open output file %s: %s / %s' % (repr(self.output_file), type(e), e))
+            if log: log.error('failed to open output file %s: %s' % (repr(self.output_file), e))
             return 1
 
         self.output_headers()

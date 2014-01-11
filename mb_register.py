@@ -2,11 +2,12 @@
 
 import struct
 import pp_functions
-from pretty_format import PrettyFormat
+from pretty_format import PrettyFormat, PfFloat, PfInt
 import re
 
 # key = mb_type id, value = (size_in_bytes, pack string, default format)
-mb_type_info = {'uint16': (2, '>H', PrettyFormat(width=8, align='right', fmt='d', pad=''))}
+mb_type_info = {'uint16': (2, '>H', PfInt()),
+                'float': (4, 'f', PfFloat())}
 pp_type_info = {'float': float, 'int': int}
 
 class MBRegister:

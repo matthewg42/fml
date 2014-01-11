@@ -38,31 +38,32 @@ class GnosticFormatter:
                     self.master.output_fd.flush()
 
 class PrettyFormatter:
-    def __init__(self, master, gutter=' '):
+    def __init__(self, master, gutter=' ', underline='_'):
         self.master = master
         self.gutter = gutter
+        self.underline = underline
 
     def output_header(self):
         h1 = []
         h2 = []
         ul = []
-        h1.append(' ' * 24)
+        h1.append('_' * 24)
         h2.append('%-24s' % 'Time')
-        ul.append('_' * 24)
+        ul.append(self.underline * 24)
         for s_add, slave in sorted(self.master.slaves.items()):
             s_begin = len(self.gutter.join(h2)) + len(self.gutter)
             for r_add, register in sorted(slave.registers.items()):
                 if register.display:
                     h2.append(register.pretty_header())
-                    ul.append(register.pf.underline())
+                    ul.append(register.pf.underline(self.underline))
             s_end = len(self.gutter.join(h2))
-            sl_text = str.center(slave.name[:s_end-s_begin], s_end-s_begin, '-')
-            if sl_text[:1] == '-':
-                sl_text = '<' + sl_text[1:]
-            if sl_text[-1:] == '-':
-                sl_text = sl_text[:-1] + '>'
+            sl_text = str.center(slave.name[:s_end-s_begin], s_end-s_begin, '_')
+            #if sl_text[:1] == '_':
+            #    sl_text = '<' + sl_text[1:]
+            #if sl_text[-1:] == '_':
+            #    sl_text = sl_text[:-1] + '>'
             h1.append(sl_text)
-        self.master.output_fd.write(self.gutter.join(h1) + "\n")
+        self.master.output_fd.write(self.gutter.join(h1) + "\n\n")
         self.master.output_fd.write(self.gutter.join(h2) + "\n")
         self.master.output_fd.write(self.gutter.join(ul) + "\n\n")
 

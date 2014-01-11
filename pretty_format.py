@@ -52,11 +52,13 @@ class PrettyFormat:
         if len(s) > self.width:
             self.width = len(s)
            
-
-# define some ready-to-use formats
-PfInt       = PrettyFormat(width=6,  align='right', fmt='d')
-PfFloat     = PrettyFormat(width=9,  align='right', fmt='.3f')
-PfTimestamp = PrettyFormat(width=23, align='left',  fmt='s')
+# Factory functions to make new formats.
+def PfInt():
+    return PrettyFormat(width=6,  align='right', fmt='d')
+def PfFloat():
+    return PrettyFormat(width=9,  align='right', fmt='.3f')
+def PfTimestamp(): 
+    return PrettyFormat(width=24, align='left',  fmt='s')
 
 if __name__ == '__main__':
     import datetime

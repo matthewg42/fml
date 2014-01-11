@@ -130,9 +130,11 @@ def main():
             sys.exit(0)
         l = master.run()
         shutdown(l)
+    except ConfigParser.NoSectionError as e:
+        log.error('failed to parse config file %s: %s' % (repr(args.config_file), e))
+        shutdown(1)
     except Exception as e:
-        log.error('I have taken exception to running: %s / %s' % (e, type(e)))
-        raise
+        log.error('I have taken exception to running: %s' % e)
         shutdown(1)
 
 def shutdown(errlevel=0):
