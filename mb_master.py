@@ -25,6 +25,7 @@ class MBMaster:
         self.config_file = config_file
         self.times = None
         self.output_file = None
+        self.appending = False
         self.output_format = None
         self.daemon = False
         self.stats = {'iterations': 0, 'warnings': 0, 'errors': 0}
@@ -169,7 +170,8 @@ class MBMaster:
             if log: log.error('failed to open output file %s: %s' % (repr(self.output_file), e))
             return 1
 
-        self.output_headers()
+        if not self.appending:
+            self.output_headers()
 
         while True:
             loop_start_time = time.time()
@@ -221,8 +223,8 @@ class MBMaster:
             self.output_file = datetime.datetime.now().strftime(self.output_file)
             if log: log.info('output file is: %s' % self.output_file)
             if os.path.exists(self.output_file):
-                raise Exception("output file already exists: %s" % self.output_file)
-            self.output_fd = open(self.output_file, 'w')
+                self.appending = True
+            self.output_fd = open(self.output_file, 'a')
 
     def output_headers(self):
         for f in self.formatters:
