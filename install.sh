@@ -1,0 +1,106 @@
+#!/bin/bash
+
+main () {
+    check_root
+    check_net
+    disable_serial_console
+    add_pi_to_dialout_group
+    set_serial_perms
+    install_deps
+    install_libs
+    install_daemon
+    update_motd
+    create_lib_dir
+}
+
+erex () {
+    l=${1:-1}
+    shift
+    echo "$@" 1>&2
+    exit $l
+}
+
+check_root () {
+    echo "checking we're running as root... "
+    [ $(id -u) = "0" ] || erex 2 "ERROR: must run as root / with sudo"
+}
+
+check_net () {
+    echo "checking we're running as root... "
+    # see if we can see google.  It's a fair test...
+    ping -c 1 google.com > /dev/null || erex 2 "ERROR: no Internet connection"
+}
+
+disable_serial_console () {
+    echo "Disabling serial console... "
+    # comment out the serial console line in inittab
+    sed -i '/^T.*-L ttyAMA0/ s/^/#/' /etc/inittab
+    # make init apply changes
+    init q
+}
+
+add_pi_to_dialout_group () {
+    echo "Disabling serial console... "
+    usermod -aG dialout pi
+}
+
+set_serial_perms () {
+    echo "Setting serial dev node permissions... "
+    chown root:dialout /dev/ttyAMA0
+    chmod 770 /dev/ttyAMA0
+}
+
+install_deps () {
+    echo "Installing dependencies using apt-get (may take a little while)... "
+    apt-get -qq -y install screen vim python-serial python-daemon || erex 3 "ERROR: failed to install packages"
+}
+
+install_libs () {
+    echo "Installing python libs... "
+    cd lib && 
+    python setup.py install && 
+    cd - || erex 4 "ERROR: failed to install fml program or module"
+}
+
+install_daemon () {
+    # copy installation files to target directories
+    echo "Installing daemon... "
+    install -m 755 fml /usr/local/bin/ && 
+    install -m 755 init.d/fml /etc/init.d/ && 
+    install -m 644 fml.conf /etc
+}
+
+update_motd () {
+    echo "Updating /etc/motd..."
+    cat > /etc/motd <<EOD
+
+             ---===>>> RPi Data Logger <<<===---
+
+Useful files:
+ - Config file...     /etc/fml.conf
+ - Data files...      /var/lib/fml/
+ - Logging goes to... /var/log/syslog
+
+Useful commands:
+ - Check daemon status...   sudo /etc/init.d/fml status
+ - Start fml daemon...      sudo /etc/init.d/fml start
+ - Stop fml daemon...       sudo /etc/init.d/fml stop
+ - Restart fml darmon...    sudo /etc/init.d/fml restart
+ - Check slave config...    fml --dump
+
+             ---===>>>    Mouse  <3    <<<===---
+
+EOD
+    chmod 644 /etc/motd
+}
+
+create_lib_dir () {
+    echo "Creating /var/lib/fml..."
+    mkdir -p /var/lib/fml
+    chgrp pi /var/lib/fml
+    chmod 775 /var/lib/fml
+}
+
+main "$@"
+
+

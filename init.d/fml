@@ -1,0 +1,36 @@
+#!/bin/sh
+#
+# Note: config for this program read from /etc/fml.conf
+PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin
+DAEMON=`which fml`
+
+main () {
+    test -x $DAEMON || erex 1 "daemon program not found: $DAEMON"
+
+    case "$1" in
+    start)
+        echo "Starting ${DAEMON##*/} daemon... "
+        fml --config-file /etc/fml.conf
+        ;;
+    stop)
+        echo "Stopping ${DAEMON##*/} daemon... "
+        fml --kill
+        ;;
+    restart)
+        $0 stop
+        sleep 3
+        $0 start
+        ;;
+    *)
+    esac
+}
+
+erex () {
+    l=$1
+    shift
+    echo "$@" 1>&2
+    exit $l
+}
+
+main "$@"
+
