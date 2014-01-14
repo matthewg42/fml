@@ -6,3 +6,6 @@ dist : Makefile install.sh mb_crc.py mb_formatter.py mb_master.py mb_register.py
 	rm -f $(tarball)
 	tar --show-transformed-names --transform s%^%fml-$(version)/% -cvzf $(tarball) $?
 
+clean :
+	rm -rf build *.pyc
+
