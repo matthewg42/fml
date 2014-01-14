@@ -40,8 +40,10 @@ disable_serial_console () {
 }
 
 add_pi_to_dialout_group () {
-    echo "Disabling serial console... "
+    echo "adding to to fml and dialout groups... "
+    groupadd fml
     usermod -aG dialout pi
+    usermod -aG fml pi
 }
 
 set_serial_perms () {
@@ -52,22 +54,25 @@ set_serial_perms () {
 
 install_deps () {
     echo "Installing dependencies using apt-get (may take a little while)... "
-    apt-get -qq -y install screen vim python-serial python-daemon || erex 3 "ERROR: failed to install packages"
+    apt-get -qq -y install screen vim python-serial python-daemon python-rrdtool rrdtool || erex 3 "ERROR: failed to install packages"
 }
 
 install_libs () {
     echo "Installing python libs... "
-    cd lib && 
-    python setup.py install && 
-    cd - || erex 4 "ERROR: failed to install fml program or module"
+    python setup.py install || erex 4 "ERROR: failed to install fml program or module"
 }
 
 install_daemon () {
     # copy installation files to target directories
     echo "Installing daemon... "
     install -m 755 fml /usr/local/bin/ && 
-    install -m 755 init.d/fml /etc/init.d/ && 
     install -m 644 fml.conf /etc
+    install -m 755 init.d/fml /etc/init.d/ && 
+    for d in /etc/rc2.d /etc/rc3.d /etc/rc4.d /etc/rc5.d; do
+        cd "$d"
+        ln -s ../init.d/fml S02fml
+        cd -
+    done
 }
 
 update_motd () {
@@ -97,7 +102,7 @@ EOD
 create_lib_dir () {
     echo "Creating /var/lib/fml..."
     mkdir -p /var/lib/fml
-    chgrp pi /var/lib/fml
+    chgrp fml /var/lib/fml
     chmod 775 /var/lib/fml
 }
 
