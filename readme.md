@@ -32,7 +32,10 @@ Single instance
 
 FML communicates with slave modbus modes using a serial interface.
 Only one instace of FML should use a serial interface at a time to
-prevent serial communications getting corrupted.
+prevent serial communications getting corrupted.  FML will check to
+see if there are other instances running before it starts.  Using
+the --clobber option will cause fml to kill off other instances 
+as it starts (permissions permitting).
 
 
 Configuration
@@ -91,7 +94,6 @@ Program flow summary
 Future development
 ------------------
 
-- One instance per serial interface
-- Multiple instances per serial port with a lockfile / shared memory being used to prevent serial collisions?
-- Other modbus data types
+- One instance per serial interface?
+- Other modbus data types.
 
