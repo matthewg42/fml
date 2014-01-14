@@ -4,6 +4,7 @@ import rrdtool
 import os
 import re
 import logging
+import time
 import ConfigParser
 import mb_master
 
@@ -79,26 +80,25 @@ class MBRrd:
     def add_dss(self, master):
         # fixed data stores which we will use regardless of how many registers there are to store.
         s = 'DS:crc_err:COUNTER:%s:U:U' % self.heartbeat
-        if log: log.debug('created def: %s' % s)
+        #if log: log.debug('created def: %s' % s)
         self.dss.append(s)
         
         s = 'DS:no_reply:COUNTER:%s:U:U' % self.heartbeat
-        if log: log.debug('created def: %s' % s)
+        #if log: log.debug('created def: %s' % s)
         self.dss.append(s)
         
         s = 'DS:other_err:COUNTER:%s:U:U' % self.heartbeat
-        if log: log.debug('created def: %s' % s)
+        #if log: log.debug('created def: %s' % s)
         self.dss.append(s)
         
         for s_add, slave in sorted(master.slaves.items()):
             for r_add, register in sorted(slave.registers.items()):
-                if register.name[0] != '*':
-                    # DS:Ch1Temp1:GAUGE:120:-20:80
-                    ds_id = "r%d_%d" % (s_add, r_add)
-                    s = 'DS:%s:GAUGE:%s:U:U' % (ds_id, self.heartbeat)
-                    if log: log.debug('created def: %s' % s)
-                    self.dss.append(s)
-                    self.averagers.append(Averager(ds_id))
+                # DS:Ch1Temp1:GAUGE:120:-20:80
+                ds_id = "r%d_%d" % (s_add, r_add)
+                s = 'DS:%s:GAUGE:%s:U:U' % (ds_id, self.heartbeat)
+                #if log: log.debug('created def: %s' % s)
+                self.dss.append(s)
+                self.averagers.append(Averager(ds_id))
 
     def read_config_file(self, cl_args):
         p = ConfigParser.SafeConfigParser( {
@@ -121,7 +121,7 @@ class MBRrd:
                 xff = p.getfloat(sec, 'xff')
                 rows = duration / (samples*self.update_interval)
                 rra = 'RRA:AVERAGE:%s:%d:%d' % (xff, samples, rows)
-                if log: log.debug('created rra: %s', rra)
+                #if log: log.debug('created rra: %s', rra)
                 self.rras.append(rra)
             except Exception as e:
                 if log: log.error('exception: %s / %s' % ( type(e), e))
@@ -153,10 +153,9 @@ class MBRrd:
             since the last update.  If it's not time to update the database, non-counter values
             will be averaged
         """
-        if log: log.debug('adding: timestamp=%d, crc_err=%d, norep_err=%d, other_err=%d, values=%s' % (
-                                timestamp, crc_err, norep_err, other_err, repr(values)))
+        #if log: log.debug('adding: timestamp=%d, crc_err=%d, norep_err=%d, other_err=%d, values=%s' % ( timestamp, crc_err, norep_err, other_err, repr(values)))
         if len(values) != len(self.averagers):
-            raise Exception("number of values doesn't match number of GUAGE DS's in rrd database")
+            raise Exception("number of values doesn't match number of GUAGE DS's in rrd database v = %d / db = %d" % (len(values), len(self.averagers)))
 
         now = int(timestamp)
         # work out if it's time for an update into rrd

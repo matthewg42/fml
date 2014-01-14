@@ -13,9 +13,11 @@ import subprocess
 import ConfigParser
 import daemon
 from daemon.pidlockfile import PIDLockFile
+import traceback
 from mb_master import MBMaster
 import mb_master
 import mb_slave
+import mb_rrd
 
 global args, log
 
@@ -51,6 +53,7 @@ def init_log():
         log.addHandler(handler)
     mb_master.log = log
     mb_slave.log = log
+    mb_rrd.log = log
 
 def get_fml_pids():
     cmd = subprocess.Popen(['pgrep', '-f', 'python.*/fml'] , shell=False, stdout=subprocess.PIPE)
@@ -135,6 +138,7 @@ def main():
         shutdown(1)
     except Exception as e:
         log.error('I have taken exception to running: %s' % e)
+        traceback.print_exc(file=sys.stdout)
         shutdown(1)
 
 def shutdown(errlevel=0):
@@ -156,7 +160,7 @@ if __name__ == '__main__':
     aparser.add_argument('--errors', dest='logging_level', action='store_const', const=logging.ERROR, default=None, help='set debugging level to errors only')
     aparser.add_argument('--debug', dest='logging_level', action='store_const', const=logging.DEBUG, default=None, help='write debugging output in the log')
     aparser.add_argument('--dump-config', dest='one_time_operation', action='store_const', const='dump', default=None, help='print fml configuratio and exit')
-    aparser.add_argument('-f', '--format', dest='output_format', default=None, help='write in specified format (gnostic, csv, pretty or rrd)')
+    aparser.add_argument('-f', '--formats', dest='output_format', default=None, help='write in specified format (gnostic, csv, pretty)')
     aparser.add_argument('--info', dest='logging_level', action='store_const', const=logging.INFO, default=None, help='write informational output in the log')
     aparser.add_argument('-i', '--interval', default=None, type=float, help='how many seconds between fetching data from slaves')
     aparser.add_argument('--list-fml', dest='one_time_operation', action='store_const', const='list', default=None, help='show a list of fml processes which are running')

@@ -10,7 +10,7 @@ import time
 import datetime
 import logging
 from mb_register import MBRegister
-from mb_slave import MBSlave, InvalidMessage
+from mb_slave import MBSlave, InvalidMessage, BadChecksum
 from pretty_format import PrettyFormat, PfFloat, PfInt
 from mb_formatter import CSVFormatter, GnosticFormatter, PrettyFormatter
 import mb_rrd
@@ -36,7 +36,6 @@ class MBMaster:
         self.serial = None
         # initialize rrd database
         self.rrd = mb_rrd.MBRrd(self.config_file, self, cl_args)
-
 
     def read_config_file(self, cl_args={}):
         if log: log.debug('MBMaster reading config from %s' % repr(self.config_file))
@@ -83,8 +82,10 @@ class MBMaster:
             self.formatters.append(GnosticFormatter(self))
         elif self.output_format == 'pretty':
             self.formatters.append(PrettyFormatter(self))
+        elif self.output_format == 'none':
+            self.formatters = []
         elif self.output_format is not None:
-            raise ValueError("output_format should be 'pretty', 'gnostic', or 'csv', but %s was specified" % repr(self.output_format))
+            raise ValueError("output_format should be 'pretty', 'gnostic', 'csv' or 'none', but %s was specified" % repr(self.output_format))
 
         # Now read slave sections
         for sec in [s for s in p.sections() if s[:6] == 'slave_']:
@@ -158,10 +159,6 @@ class MBMaster:
         self.slaves[slave.address] = slave
 
     def run(self):  
-        if len(self.formatters) == 0:
-            if log: log.error('no output formatters have been selected. Nothing to do.')
-            return 1
-
         try:
             self.open_serial_port()
         except Exception as e:
@@ -186,8 +183,8 @@ class MBMaster:
                 timestamp = (loop_start_time + time.time()) / 2 # average now and loop start to give most "middle" time... :s
                 self.output_data(timestamp) 
                 v = []
-                for s in m.slaves.values():
-                    for r in s.registers.values():
+                for sk, s in self.slaves.items():
+                    for rk, r in s.registers.items():
                         v.append(r.get())
                 self.rrd.add_data(timestamp, self.stats['crc_err'], self.stats['no_reply'], self.stats['other_err'], v)
             except BadChecksum as e:
@@ -231,6 +228,8 @@ class MBMaster:
         time.sleep(0.15)
 
     def open_output_file(self):
+        if len(self.formatters) == 0:
+            self.output_fd = open('/dev/null', 'a')
         if self.output_file is None or self.output_file == '-':
             self.output_fd = sys.stdout
         else:

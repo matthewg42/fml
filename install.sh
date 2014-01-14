@@ -101,9 +101,9 @@ EOD
 
 create_lib_dir () {
     echo "Creating /var/lib/fml..."
-    mkdir -p /var/lib/fml
-    chgrp fml /var/lib/fml
-    chmod 775 /var/lib/fml
+    mkdir -p /var/lib/fml/www
+    chgrp fml /var/lib/fml /var/lib/fml/www
+    chmod 775 /var/lib/fml /var/lib/fml/www
 }
 
 main "$@"
