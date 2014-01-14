@@ -13,6 +13,7 @@ from mb_register import MBRegister
 from mb_slave import MBSlave, InvalidMessage
 from pretty_format import PrettyFormat, PfFloat, PfInt
 from mb_formatter import CSVFormatter, GnosticFormatter, PrettyFormatter
+import mb_rrd
 
 global log
 log = None
@@ -28,11 +29,14 @@ class MBMaster:
         self.appending = False
         self.output_format = None
         self.daemon = False
-        self.stats = {'iterations': 0, 'warnings': 0, 'errors': 0}
+        self.stats = {'crc_err': 0, 'no_reply': 0, 'other_err': 0, 'iterations': 0, 'warnings': 0}
         self.formatters = []
         self.read_config_file(cl_args)
         self.output_fd = None
         self.serial = None
+        # initialize rrd database
+        self.rrd = mb_rrd.MBRrd(self.config_file, self, cl_args)
+
 
     def read_config_file(self, cl_args={}):
         if log: log.debug('MBMaster reading config from %s' % repr(self.config_file))
@@ -179,10 +183,20 @@ class MBMaster:
 
             try:
                 self.query_slaves()
-                self.output_data((loop_start_time + time.time()) / 2)  # average now and loop start to give most "middle" time... :s
+                timestamp = (loop_start_time + time.time()) / 2 # average now and loop start to give most "middle" time... :s
+                self.output_data(timestamp) 
+                v = []
+                for s in m.slaves.values():
+                    for r in s.registers.values():
+                        v.append(r.get())
+                self.rrd.add_data(timestamp, self.stats['crc_err'], self.stats['no_reply'], self.stats['other_err'], v)
+            except BadChecksum as e:
+                if log: log.warning(str(e))
+                self.stats['crc_err'] += 1
+                pass
             except InvalidMessage as e:
                 if log: log.warning('bad reply: %s', str(e))
-                self.stats['errors'] += 1
+                self.stats['other_err'] += 1
                 pass
 
             # If we are only running some fixed number of times, check 

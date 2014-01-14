@@ -9,6 +9,13 @@ from mb_register import MBRegister
 global log
 log = None
 
+class BadChecksum(Exception):
+    def __init__(self, slave):
+        self.address = slave.address
+        self.name = slave.name
+    def __str__(self):
+        return 'bad checksum reply from slave #%d %s' % (self.address, self.name)
+
 class InvalidMessage(Exception):
     def __init__(self, slave, reason):
         self.address = slave.address
@@ -64,7 +71,7 @@ class MBSlave:
         # check CRC
         crc = mb_crc.calculate_crc( bytearray( reply[:-2] ) )
         if bytearray(reply[-2:]) != crc:
-            raise InvalidMessage(self, "bad checksum")
+            raise BadChecksum(self)
         # remove non-data items
         num_bytes = ord(reply[2])
         if len(reply) != num_bytes + 5: # address (1 byte) function (1 byte), num_bytes (1 byte), crc (2 bytes)

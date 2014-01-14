@@ -3,7 +3,7 @@
 import re
 
 class PrettyFormat:
-    def __init__(self, width, align='left', fmt='s', pad=''):
+    def __init__(self, width=6, align='left', fmt='s', pad=''):
         """ If you want to specify precision for floats, prefix that on the fmt, without the width
             i.e. PrettyFormat(width=10, fmt='.4f') -> %10.4f
         """
