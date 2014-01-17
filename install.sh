@@ -11,6 +11,7 @@ main () {
     install_daemon
     update_motd
     create_lib_dir
+    install_httpd
 }
 
 erex () {
@@ -54,7 +55,7 @@ set_serial_perms () {
 
 install_deps () {
     echo "Installing dependencies using apt-get (may take a little while)... "
-    apt-get -qq -y install screen vim python-serial python-daemon python-rrdtool rrdtool || erex 3 "ERROR: failed to install packages"
+    apt-get -qq -y install screen vim python-serial python-daemon python-rrdtool rrdtool mini-httpd || erex 3 "ERROR: failed to install packages"
 }
 
 install_libs () {
@@ -102,8 +103,24 @@ EOD
 create_lib_dir () {
     echo "Creating /var/lib/fml..."
     mkdir -p /var/lib/fml/www
-    chgrp fml /var/lib/fml /var/lib/fml/www
+    chown root:fml fml /var/lib/fml /var/lib/fml/www
     chmod 775 /var/lib/fml /var/lib/fml/www
+}
+
+install_httpd () {
+    echo "Installing httpd settings..."
+    install -m 644 www/index.html /var/lib/fml/www/ &&
+    install -m 755 www/fml_update_graphs.sh /usr/local/bin/ && 
+    install -m 644 www/mini-httpd.conf /etc/ && 
+    install -m 644 www/default-mini-httpd /etc/default/mini-httpd && 
+    tmp=$(mktemp)
+    su pi -c "crontab -l | grep -v '^ *$'" > "$tmp"
+    echo '#* * * * * nice /usr/local/bin/fml_update_graphs.sh' >> "$tmp"
+    chmod 644 "$tmp" 
+    su pi -c "crontab $tmp"
+    rm -f "$tmp"
+    echo "crontab command to update graphs has been added to pi user, but is commented - use 'crontab -e' to edit"
+    /etc/init.d/mini-httpd restart
 }
 
 main "$@"
