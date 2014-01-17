@@ -34,6 +34,7 @@ class MBMaster:
         self.read_config_file(cl_args)
         self.output_fd = None
         self.serial = None
+        self.clobber = cl_args['clobber']
         self.rrd_disable = cl_args['rrd_disable']
         # initialize rrd database
         if not self.rrd_disable:
