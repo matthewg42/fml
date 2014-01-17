@@ -20,7 +20,8 @@ import mb_slave
 import mb_register
 import mb_rrd
 
-global args, log
+global args, log, master
+master = None
 
 def read_config_file():
     global args, log
@@ -111,13 +112,13 @@ def check_singleton():
         else:
             # try to kill it...
             if kill_fml_instances():
-                sys.stderr.write('fml: I clobbered other fml processes, so don wurry\n')
+                sys.stderr.write('fml: old fml process killed\n')
             else:
-                sys.stderr.write('fml: failed to clobbered other fml processes (unix permissions?)\n')
+                sys.stderr.write('fml: failed to kill other fml processes (unix permissions?)\n')
                 sys.exit(1)
 
 def main():
-    global args, log
+    global args, log, master
     read_config_file()
     init_log()
     log.info('Starting')
@@ -147,7 +148,9 @@ def main():
         shutdown(1)
 
 def shutdown(errlevel=0):
-    global log
+    global log, master
+    if master != None:
+        master.shutdown()
     log.info('bye')
     sys.exit(errlevel)
 
@@ -173,6 +176,7 @@ if __name__ == '__main__':
     aparser.add_argument('--kill-fml', dest='one_time_operation', action='store_const', const='kill', default=None, help='kill any running instances of fml')
     aparser.add_argument('--output-file', dest='output_file', default=None, help='write output to specified file')
     aparser.add_argument('-r', '--raw', dest='raw_mode', action='store_const', const=True, default=False, help='suppress post-processing - just write data as it comes from the slaves')
+    aparser.add_argument('-R', '--rrd-disable', dest='rrd_disable', action='store_const', const=True, default=False, help='suppress rrd recording of data')
     aparser.add_argument('-D', '--serial-device', dest='serial_device', default=None, help='specify serial device node to connect with, e.g. /dev/ttyS0')
     aparser.add_argument('--serial-baud', dest='serial_baud', type=int, default=None, help='specify baud rate for serial communications')
     aparser.add_argument('--serial-bytesize', dest='serial_bytesize', type=int, default=None, help='specify bytesize for serial communications')

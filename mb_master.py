@@ -34,8 +34,11 @@ class MBMaster:
         self.read_config_file(cl_args)
         self.output_fd = None
         self.serial = None
+        self.clobber = cl_args['clobber']
+        self.rrd_disable = cl_args['rrd_disable']
         # initialize rrd database
-        self.rrd = mb_rrd.MBRrd(self.config_file, self, cl_args)
+        if not self.rrd_disable:
+            self.rrd = mb_rrd.MBRrd(self.config_file, self, cl_args)
 
     def read_config_file(self, cl_args={}):
         if log: log.debug('MBMaster reading config from %s' % repr(self.config_file))
@@ -182,11 +185,12 @@ class MBMaster:
                 self.query_slaves()
                 timestamp = (loop_start_time + time.time()) / 2 # average now and loop start to give most "middle" time... :s
                 self.output_data(timestamp) 
-                v = []
-                for sk, s in self.slaves.items():
-                    for rk, r in s.registers.items():
-                        v.append(r.get())
-                self.rrd.add_data(timestamp, self.stats['crc_err'], self.stats['no_reply'], self.stats['other_err'], v)
+                if not self.rrd_disable:
+                    v = []
+                    for sk, s in self.slaves.items():
+                        for rk, r in s.registers.items():
+                            v.append(r.get())
+                    self.rrd.add_data(timestamp, self.stats['crc_err'], self.stats['no_reply'], self.stats['other_err'], v)
             except BadChecksum as e:
                 if log: log.warning(str(e))
                 self.stats['crc_err'] += 1
@@ -234,7 +238,8 @@ class MBMaster:
             self.output_fd = sys.stdout
         else:
             # TODO: handle multiple format types
-            self.output_file = datetime.datetime.now().strftime(self.output_file.replace('%_', {'pretty':'txt', 'csv':'csv', 'gnostic':'gnostic'}[self.formatters[0]]))
+            ext = {'pretty':'txt', 'csv':'csv', 'gnostic':'gnostic'}[self.output_format]
+            self.output_file = datetime.datetime.now().strftime(self.output_file.replace('%_', ext))
             if log: log.info('output file is: %s' % self.output_file)
             if os.path.exists(self.output_file):
                 self.appending = True
@@ -262,6 +267,21 @@ class MBMaster:
     def output_data(self, timestamp):
         for f in self.formatters:
             f.output_data(timestamp)
+
+    def shutdown(self):
+        # flush files and write rrd if we're doing that
+        if log: log.info('MBMaster shutting down. Flushing files, writing RRD caches...')
+        if isinstance(self.output_fd, file):
+            if not self.output_fd.closed:
+                self.output_fd.flush()
+                self.output_fd.close()
+        if not self.rrd_disable:
+            try:
+                self.rrd.update_rrd(int(time.time()))
+            except:
+                # we don't really care if this fails, we're closing anyway
+                # if it does fail it's because there was an update in the last second
+                pass
 
 if __name__ == '__main__':
     m = MBMaster('./fml.conf')

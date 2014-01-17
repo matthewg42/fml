@@ -39,14 +39,14 @@ mk_temp_graph () {
                 -w 400 -h 100 \
                 --start "N-$2" \
                 --vertical-label "Deg C" \
-                'DEF:t1=/var/lib/fml/fml.rrd:r1_0:AVERAGE' \
-                'DEF:t2=/var/lib/fml/fml.rrd:r1_1:AVERAGE' \
-                'DEF:t3=/var/lib/fml/fml.rrd:r1_4:AVERAGE' \
-                'DEF:t5=/var/lib/fml/fml.rrd:r1_8:AVERAGE' \
+                'DEF:t1=/var/lib/fml/fml.rrd:r240_0:AVERAGE' \
+                'DEF:t2=/var/lib/fml/fml.rrd:r240_1:AVERAGE' \
+                'DEF:t3=/var/lib/fml/fml.rrd:r240_4:AVERAGE' \
+                'DEF:t6=/var/lib/fml/fml.rrd:r240_9:AVERAGE' \
                 'LINE:t1#770000:Temp1' \
                 'LINE:t2#007700:Temp2' \
                 'LINE:t3#000077:Temp3' \
-                'LINE:t5#000000:Temp5'
+                'LINE:t6#000000:Temp6'
 }
 
 main "$@"
