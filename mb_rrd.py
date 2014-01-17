@@ -64,11 +64,19 @@ class MBRrd:
         self.read_config_file(cl_args)
         self.signature_file = re.sub(r'\.rrd$', r'.sig', self.database_file)
         self.add_dss(master)
-        # If the database file doesn't exist, we can safely create it.
+        try:
+            self.check_signature()
+        except BadSignature:
+            if master.clobber:
+                if log: log.info('RRD database signature does not match, but clobbering active - backing up old database and creating a new one')
+                self.backup_and_remove_database()
+                pass
+            else:
+                raise
+        except IOError:
+            pass
         if not os.path.exists(self.database_file):
             self.create_database()
-        # this raises a BadSignature exception if the sig doesn't match the database
-        self.check_signature()
         self.last_update = None
             
     def __repr__(self):
@@ -127,6 +135,7 @@ class MBRrd:
                 if log: log.error('exception: %s / %s' % ( type(e), e))
 
     def create_database(self):
+        if log: log.info('Creating new RRD (round robin database) file: %s' % self.database_file)
         a = [self.database_file]
         a.extend(['--start', str(int(time.time()))])
         a.extend(['--step', str(self.update_interval)])
@@ -147,6 +156,17 @@ class MBRrd:
         
         if s != sig:
             raise BadSignature(self.database_file, self.signature_file)
+
+    def backup_and_remove_database(self):
+        if not os.path.exists(self.database_file):
+            if log: log.debug('no RRD file to backup')
+            return
+
+        # rename old database
+        backup = self.database_file + "~"
+        while os.path.exists(backup):
+            backup = backup + "~"
+        os.rename(self.database_file, backup)
 
     def add_data(self, timestamp, crc_err, norep_err, other_err, values):
         """ adds data items, and updates the rrd database if necessary (i.e. if heartbeat has passed

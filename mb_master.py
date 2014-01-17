@@ -31,6 +31,7 @@ class MBMaster:
         self.daemon = False
         self.stats = {'crc_err': 0, 'no_reply': 0, 'other_err': 0, 'iterations': 0, 'warnings': 0}
         self.formatters = []
+        self.clobber = cl_args['clobber']
         self.read_config_file(cl_args)
         self.output_fd = None
         self.serial = None
