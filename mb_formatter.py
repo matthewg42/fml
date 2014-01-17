@@ -20,7 +20,7 @@ class CSVFormatter:
         for s_add, slave in sorted(self.master.slaves.items()):
             for r_add, register in sorted(slave.registers.items()):
                 if register.display:
-                    a.append(register.pretty_value().replace(' ',''))
+                    a.append(register.pretty_value(self.master.raw_mode).replace(' ',''))
         self.master.output_fd.write(",".join(a) + "\n")
 
 class GnosticFormatter:
@@ -34,7 +34,7 @@ class GnosticFormatter:
         for s_add, slave in sorted(self.master.slaves.items()):
             for r_add, register in sorted(slave.registers.items()):
                 if register.display:
-                    self.master.output_fd.write('%.3f;%s;%s\n' % ( slave.last_fetched * 1000, register.pretty_value().replace(' ',''), register.name ))
+                    self.master.output_fd.write('%.3f;%s;%s\n' % ( slave.last_fetched * 1000, register.pretty_value(self.master.raw_mode).replace(' ',''), register.name ))
                     self.master.output_fd.flush()
 
 class PrettyFormatter:
@@ -72,6 +72,6 @@ class PrettyFormatter:
         for s_add, slave in sorted(self.master.slaves.items()):
             for r_add, register in sorted(slave.registers.items()):
                 if register.display:
-                    a.append(register.pretty_value())
+                    a.append(register.pretty_value(self.master.raw_mode))
         self.master.output_fd.write(self.gutter.join(a) + "\n")
 
