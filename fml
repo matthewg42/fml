@@ -170,7 +170,7 @@ if __name__ == '__main__':
     aparser.add_argument('-i', '--interval', default=None, type=float, help='how many seconds between fetching data from slaves')
     aparser.add_argument('--list-fml', dest='one_time_operation', action='store_const', const='list', default=None, help='show a list of fml processes which are running')
     aparser.add_argument('--log-file', dest='log_file', default=None, help='send logging to this file instead of stderr (has no effect when in daemon mode)')
-    aparser.add_argument('--kill-fml', dest='one_time_operation', action='store_const', const='kill', default=None, help='kill and running instances of fml')
+    aparser.add_argument('--kill-fml', dest='one_time_operation', action='store_const', const='kill', default=None, help='kill any running instances of fml')
     aparser.add_argument('--output-file', dest='output_file', default=None, help='write output to specified file')
     aparser.add_argument('-r', '--raw', dest='raw_mode', action='store_const', const=True, default=False, help='suppress post-processing - just write data as it comes from the slaves')
     aparser.add_argument('-D', '--serial-device', dest='serial_device', default=None, help='specify serial device node to connect with, e.g. /dev/ttyS0')
