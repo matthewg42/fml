@@ -158,7 +158,7 @@ def sighandler(signum, frame):
 
 if __name__ == '__main__':
     global args, log
-    aparser = argparse.ArgumentParser(description='Modbus Register Logging Daemon')
+    aparser = argparse.ArgumentParser(description='Fast Modbus Logging Daemon')
     aparser.add_argument('-c', '--config-file', dest='config_file', default='/etc/fml.conf', help='specify the path to the config file')
     aparser.add_argument('--clobber', action='store_const', const=True, default=False, help='try to run even if there is already an fml process running (kill it first), also create new RRD database when the slave config has changed')
     aparser.add_argument('-d', '--daemon', dest='daemon', action='store_const', const=True, default=False, help='run in daemon mode (detach, log to syslog, output to file)')
