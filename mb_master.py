@@ -31,7 +31,6 @@ class MBMaster:
         self.daemon = False
         self.stats = {'crc_err': 0, 'no_reply': 0, 'other_err': 0, 'iterations': 0, 'warnings': 0}
         self.formatters = []
-        self.clobber = cl_args['clobber']
         self.read_config_file(cl_args)
         self.output_fd = None
         self.serial = None
@@ -231,10 +230,11 @@ class MBMaster:
     def open_output_file(self):
         if len(self.formatters) == 0:
             self.output_fd = open('/dev/null', 'a')
-        if self.output_file is None or self.output_file == '-':
+        elif self.output_file is None or self.output_file == '-':
             self.output_fd = sys.stdout
         else:
-            self.output_file = datetime.datetime.now().strftime(self.output_file)
+            # TODO: handle multiple format types
+            self.output_file = datetime.datetime.now().strftime(self.output_file.replace('%_', {'pretty':'txt', 'csv':'csv', 'gnostic':'gnostic'}[self.formatters[0]]))
             if log: log.info('output file is: %s' % self.output_file)
             if os.path.exists(self.output_file):
                 self.appending = True
