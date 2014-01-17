@@ -17,6 +17,7 @@ import traceback
 from mb_master import MBMaster
 import mb_master
 import mb_slave
+import mb_register
 import mb_rrd
 
 global args, log
@@ -53,6 +54,7 @@ def init_log():
         log.addHandler(handler)
     mb_master.log = log
     mb_slave.log = log
+    mb_register.log = log
     mb_rrd.log = log
 
 def get_fml_pids():
@@ -167,7 +169,7 @@ if __name__ == '__main__':
     aparser.add_argument('--log-file', dest='log_file', default=None, help='send logging to this file instead of stderr (has no effect when in daemon mode)')
     aparser.add_argument('--kill-fml', dest='one_time_operation', action='store_const', const='kill', default=None, help='kill and running instances of fml')
     aparser.add_argument('--output-file', dest='output_file', default=None, help='write output to specified file')
-    aparser.add_argument('-r', '--raw', dest='raw_mode', default=None, help='suppress post-processing - just write data as it comes from the slaves')
+    aparser.add_argument('-r', '--raw', dest='raw_mode', action='store_const', const=True, default=False, help='suppress post-processing - just write data as it comes from the slaves')
     aparser.add_argument('-D', '--serial-device', dest='serial_device', default=None, help='specify serial device node to connect with, e.g. /dev/ttyS0')
     aparser.add_argument('--serial-baud', dest='serial_baud', type=int, default=None, help='specify baud rate for serial communications')
     aparser.add_argument('--serial-bytesize', dest='serial_bytesize', type=int, default=None, help='specify bytesize for serial communications')

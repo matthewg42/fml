@@ -2,8 +2,12 @@
 
 import struct
 import pp_functions
+import logging
 from pretty_format import PrettyFormat, PfFloat, PfInt
 import re
+
+global log
+log = None
 
 # key = mb_type id, value = (size_in_bytes, pack string, default format)
 mb_type_info = {'uint16': (2, '>H', PfInt()),
@@ -63,7 +67,16 @@ class MBRegister:
             return self.raw_value
         else:
             if self.pp_value is None and self.raw_value is not None:
-                self.pp_value = pp_functions.post_process(self.pp_func, self.raw_value, *self.pp_params)
+                try:
+                    self.pp_value = pp_functions.post_process(self.pp_func, self.raw_value, *self.pp_params)
+                except ValueError as e:
+                    if log: log.debug('ValueError when calling post_processing function %s : %s' % (self.pp_func, e))
+                    self.pp_value = None
+                    pass
+                except Exception as e:
+                    if log: log.debug('Exception when calling post_processing function %s : %s' % (self.pp_func, e))
+                    self.pp_value = None
+                    pass
             return self.pp_value
 
     def read(self, data):
@@ -73,8 +86,8 @@ class MBRegister:
     def pretty_header(self):
         return self.pf.fmtstr(string=True) % self.name
 
-    def pretty_value(self):
-        v = self.get()
+    def pretty_value(self, raw=False):
+        v = self.get(raw)
         r = self.pf.out(v)
         return r
 
