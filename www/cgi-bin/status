@@ -1,0 +1,22 @@
+#!/usr/bin/env python
+# FML get a listing of data files
+
+import cgi
+import subprocess
+
+print "Content-type: text/html"
+print
+print """
+<html>
+<head><title>FML Process Status</title></head>
+<body>
+<pre>"""
+cmd = subprocess.Popen(['fml', '--list'] , shell=False, stdout=subprocess.PIPE)
+for l in cmd.stdout.read().split('\n'):
+    print l
+print """</pre>
+</body>
+</html>
+"""
+
+

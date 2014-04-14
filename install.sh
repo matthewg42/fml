@@ -102,14 +102,16 @@ EOD
 
 create_lib_dir () {
     echo "Creating /var/lib/fml..."
-    mkdir -p /var/lib/fml/www
-    chown root:fml fml /var/lib/fml /var/lib/fml/www
-    chmod 775 /var/lib/fml /var/lib/fml/www
+    mkdir -p /var/lib/fml/www/cgi-bin
+    chown root:fml fml /var/lib/fml /var/lib/fml/www /var/lib/fml/www/cgi-bin
+    chmod 775 /var/lib/fml /var/lib/fml/www /var/lib/fml/www/cgi-bin
 }
 
 install_httpd () {
     echo "Installing httpd settings..."
     install -m 644 www/index.html /var/lib/fml/www/ &&
+    install -m 755 www/cgi-bin/status /var/lib/fml/www/cgi-bin/ &&
+    install -m 755 www/cgi-bin/data_files /var/lib/fml/www/cgi-bin/ &&
     install -m 755 www/fml_update_graphs.sh /usr/local/bin/ && 
     install -m 644 www/mini-httpd.conf /etc/ && 
     install -m 644 www/default-mini-httpd /etc/default/mini-httpd && 
