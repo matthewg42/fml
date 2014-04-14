@@ -55,7 +55,7 @@ set_serial_perms () {
 
 install_deps () {
     echo "Installing dependencies using apt-get (may take a little while)... "
-    apt-get -qq -y install screen vim python-serial python-daemon python-rrdtool rrdtool mini-httpd || erex 3 "ERROR: failed to install packages"
+    apt-get -qq -y install screen vim python-serial python-daemon python-rrdtool rrdtool mini-httpd bc || erex 3 "ERROR: failed to install packages"
 }
 
 install_libs () {

@@ -4,10 +4,14 @@
   <script type="text/javascript">
     refreshImage = function()
     {
-      var ids = ['ten-minute', 'hour', 'day', 'week', 'month', 'year'];
+      var ids = ['ten-minute', 'week'];
       for (var id in ids) { 
-	img = document.getElementById(ids[id]);
+	img = document.getElementById("temp-" + ids[id]);
         img.src = "temp_" + ids[id] + ".png?rand=" + Math.random();
+	img = document.getElementById("voltage-" + ids[id]);
+        img.src = "voltage_" + ids[id] + ".png?rand=" + Math.random();
+	img = document.getElementById("current-" + ids[id]);
+        img.src = "current_" + ids[id] + ".png?rand=" + Math.random();
       }
       img = document.getElementById("errors");
       img.src="errors.png?rand=" + Math.random();
@@ -19,22 +23,20 @@
 <body onload="window.setInterval(refreshImage, 60*1000);">
   <table border="1">
     <tr>
-      <td><img src="temp_ten-minute.png" id="ten-minute" /></td>
-      <td><img src="temp_hour.png" id="hour" /></td>
+      <td><img src="temp_ten-minute.png" id="temp-ten-minute" /></td>
+      <td><img src="temp_week.png" id="temp-hour" /></td>
     </tr>
     <tr>
-      <td><img src="temp_day.png" id="day" /></td>
-      <td><img src="temp_week.png" id="week" /></td>
+      <td><img src="voltage_ten-minute.png" id="voltage-ten-minute" /></td>
+      <td><img src="voltage_week.png" id="voltage-hour" /></td>
     </tr>
     <tr>
-      <td><img src="temp_month.png" id="month" /></td>
-      <td><img src="temp_year.png" id="year" /></td>
+      <td><img src="current_ten-minute.png" id="current-ten-minute" /></td>
+      <td><img src="current_week.png" id="current-hour" /></td>
     </tr>
     <tr>
       <td colspan="2"> <img src="errors.png" id="errors" /> </td>
     </tr>
   </table> 
-  <img src="" id="cam" />
 </body>
 </html>
-
