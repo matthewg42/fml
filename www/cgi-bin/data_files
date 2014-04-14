@@ -1,0 +1,101 @@
+#!/usr/bin/env python
+# FML get a listing of data files
+
+import cgi, cgitb
+from os import listdir, stat
+from os.path import isfile, join
+from time import ctime
+from sys import stdout
+
+data_dir = "/var/lib/fml"
+ctypes = {'csv': 'text/plain', 'gnostic': 'text/plain', 'txt': 'text/plain'}
+
+def print_index():
+    print "Content-type: text/html"
+    print
+    print """
+<html>
+<head><title>FML Raw Data Files</title></head>
+<body>
+  <table border="0" width="1000px">
+    <tr>
+      <td align="left"><a href="/">Graphs</a></td>
+      <td align="center"><a href="cgi-bin/data_files">Data Files</a></td>
+      <td align="right"><a href="https://github.com/matthewg42/fml">Github</a></td>
+    </tr>
+  </table>
+  <hl>
+  <h3>Data Files</h3>
+  <table border="1" cellpadding="10">
+    <tr>
+      <th align="left">Filename</th>
+      <th align="right">Date last modified</th>
+      <th align="right">Size (bytes)</th>
+    </tr>
+"""
+    files = listdir(data_dir)
+    files.sort()
+    for f in files:
+        print "    <tr>"
+        ext = f[f.rfind('.')+1:]
+        if isfile(join(data_dir,f)) and ext in ['csv','txt','gnostic','rrd','pretty']:
+            print "      <td align=\"left\"><a href=\"%s\">%s</td>" % ("/cgi-bin/data_files?f="+f, f)
+
+            (mode, ino, dev, nlink, uid, gid, size, atime, mtime, crtime) = stat(join(data_dir,f))
+            print "      <td align=\"right\">%s</td>" % ctime(mtime)
+            print "      <td align=\"right\">%s</td>" % size
+        print "    </tr>"
+    print """  </table>
+</body>
+</html>
+""" 
+
+def get_content_type(f):
+    # return the content type for a given extension...
+    ext = f[f.rfind('.')+1:].lower()
+    if ext in ctypes.keys():
+        return ctypes[ext]
+    else:
+        return 'application/octet'
+
+def send_file(f):
+    # check file exists in data directory, and send it if it does, else a 404
+    if f.find('/') >= 0 or not isfile(join(data_dir,f)):
+        print """Content-type: text/html
+Status: 400 Bad Request
+
+<html>
+<head><title>FML Raw Data Files ERROR</title></head>
+<body>
+<h2>ERROR: <i>""" + str(f) + """</i> is not a valid filename.</h2>
+</body>
+</html>
+"""
+        return
+    else:
+        ct = get_content_type(f)
+        print "Content-type: %s\n" % ct
+        if ct[:5] == 'text/':
+            f = open(join(data_dir,f), 'r')
+            for line in f:
+                print line
+        else:
+            f = open(join(data_dir,f), 'rb')
+            while True:
+                buf = f.read(1024)
+                if not buf:
+                    break
+                stdout.write(buf)
+
+### main
+form = cgi.FieldStorage() 
+f = form.getvalue('f')
+print f
+if f is None:
+    print "printing index"
+    print_index()
+else:
+    print "sending file"
+    send_file(f)
+
+

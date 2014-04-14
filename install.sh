@@ -115,7 +115,7 @@ install_httpd () {
     install -m 644 www/default-mini-httpd /etc/default/mini-httpd && 
     tmp=$(mktemp)
     su pi -c "crontab -l | grep -v '^ *$'" > "$tmp"
-    echo '#* * * * * nice /usr/local/bin/fml_update_graphs.sh' >> "$tmp"
+    echo '* * * * * nice /usr/local/bin/fml_update_graphs.sh' >> "$tmp"
     chmod 644 "$tmp" 
     su pi -c "crontab $tmp"
     rm -f "$tmp"
