@@ -40,15 +40,15 @@ mk_temp_graph () {
                 -w 400 -h 100 \
                 --start "N-$2" \
                 --vertical-label "Deg C" \
-                'DEF:t1=/var/lib/fml/fml.rrd:r${slave_id}_0:AVERAGE' \
+                "DEF:t1=/var/lib/fml/fml.rrd:r${slave_id}_0:AVERAGE" \
                 'LINE:t1#770000:Temp' > /dev/null 2>&1
 
     rrdtool graph /var/lib/fml/www/voltage_$1.png.png -a PNG --title="Voltage: $1" \
                 -w 400 -h 100 \
                 --start "N-$2" \
                 --vertical-label "Volts" \
-                'DEF:v1=/var/lib/fml/fml.rrd:r${slave_id}_1:AVERAGE' \
-                'DEF:v2=/var/lib/fml/fml.rrd:r${slave_id}_2:AVERAGE' \
+                "DEF:v1=/var/lib/fml/fml.rrd:r${slave_id}_1:AVERAGE" \
+                "DEF:v2=/var/lib/fml/fml.rrd:r${slave_id}_2:AVERAGE" \
                 'LINE:v1#009999:Voltage1' \
                 'LINE:v2#00ee00:Voltage2' > /dev/null 2>&1
 
@@ -56,8 +56,8 @@ mk_temp_graph () {
                 -w 400 -h 100 \
                 --start "N-$2" \
                 --vertical-label "Amps" \
-                'DEF:c1=/var/lib/fml/fml.rrd:r${slave_id}_3:AVERAGE' \
-                'DEF:c2=/var/lib/fml/fml.rrd:r${slave_id}_3:AVERAGE' \
+                "DEF:c1=/var/lib/fml/fml.rrd:r${slave_id}_3:AVERAGE" \
+                "DEF:c2=/var/lib/fml/fml.rrd:r${slave_id}_3:AVERAGE" \
                 'LINE:c1#000077:Current1' \
                 'LINE:c2#440077:Current2' > /dev/null 2>&1
 
