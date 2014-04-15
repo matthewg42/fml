@@ -17,6 +17,7 @@ How to: make installer tarball from github repo
 Change into the fml root directory and run make.  i.e.
 `
 $ cd fml
+
 $ make
 `
 A file named fml-{version}.tar.gz should be generated. This contains 
@@ -31,7 +32,9 @@ change into the directory it creates and run the install.sh with root
 permissions:
 `
 $ untar zxf fml-1.0.tar.gz
+
 $ cd fml-1.0
+
 $ sudo ./install.sh
 `
 
@@ -52,7 +55,9 @@ The installer creates an init script for fml, which may be used to start
 and stop the fml as a service, and check if the service has been started:
 `
 $ sudo /etc/init.d/fml start
+
 $ sudo /etc/init.d/fml status
+
 $ sudo /etc/init.d/fml stop
 `
 
@@ -91,7 +96,9 @@ be used, so no post-processing function is needed.  Create the following
 section in the config file:
 `
 [slave_240]
+
 r4_name = Temp1
+
 r7_name = Temp1
 `
 
@@ -119,7 +126,9 @@ in the appropriate slave section of the config file as follows:
 
 `
 r0_name = Temp1
+
 r0_pp_fn = thermister_to_celcius
+
 r0_pp_param = 4126,298.15,10000
 `
 
