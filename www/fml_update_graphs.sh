@@ -57,9 +57,7 @@ mk_temp_graph () {
                 --start "N-$2" \
                 --vertical-label "Amps" \
                 "DEF:c1=/var/lib/fml/fml.rrd:r${slave_id}_3:AVERAGE" \
-                "DEF:c2=/var/lib/fml/fml.rrd:r${slave_id}_3:AVERAGE" \
-                'LINE:c1#000077:Current1' \
-                'LINE:c2#440077:Current2' > /dev/null 2>&1
+                'LINE:c1#000077:Current' > /dev/null 2>&1
 
 }
 

@@ -43,7 +43,7 @@ Configuration
 
 Configuration is stored in the file `/etc/fml.conf`. Some settings
 can also be set using command line options. Command line options take
-precedence over settings in the confguration file.
+precedence over settings in the configuration file.
 
 Each modbus slave device which is connected using the serial interface
 should have a `slave_<address>` section in the configuration file (where
@@ -89,6 +89,45 @@ Program flow summary
     2. Loop
 	1. Poll slaves
 	2. Format and write output
+
+
+Installer
+---------
+
+The install.sh script is designed to install and configure an FML instance
+on a fresh Raspian-based Raspberry Pi (or other debian-based system). The
+install.sh script uses apt-get to install dependencies, installs the 
+startup scripts in /etc/init.d, /etc/rc.d, creates FML working directories
+in /var/lib/fml, sets up the web server and adds a cron script to the pi 
+user which updates the graphs for the web server.
+
+
+Creating a tarball installer package
+------------------------------------
+
+Clone the guthub repository and run "make" from that directory. This will
+generage a tarball named "fml-{version}.tar.gz". 
+
+
+Installing using a tarball
+--------------------------
+
+Copy the tarball to the target raspian system, untar and run install.sh
+with superuser permissions.  i.e.
+
+`
+mypi$ cd /tmp
+mypi$ tar zxf fml-1.0.tar.gz
+mypi$ cd fml-1.0
+mypi$ sudo ./install.sh
+`
+
+Edit the /etc/fml.conf file according to your hardware and preferences,
+then use this command to start fml:A
+
+`
+mypi$ sudo /etc/init.d/fml start
+`
 
 
 Future development
