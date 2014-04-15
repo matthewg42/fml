@@ -7,19 +7,16 @@ How to download
 Clone the git repo https://github.com/matthewg42/fml.git
 
 i.e. use the command
-`
-$ git clone https://github.com/matthewg42/fml.git
-`
+    $ git clone https://github.com/matthewg42/fml.git
 
 How to: make installer tarball from github repo
 -----------------------------------------------
 
 Change into the fml root directory and run make.  i.e.
-`
-$ cd fml
 
-$ make
-`
+    $ cd fml
+    $ make
+
 A file named fml-{version}.tar.gz should be generated. This contains 
 everthing needed to install FML on a raspberry pi with a fresh Raspian
 installation.
@@ -30,21 +27,18 @@ How to: use an installer tarball
 Synopsis: copy the tarball to a raspberry pi running Raspian, untar it, 
 change into the directory it creates and run the install.sh with root 
 permissions:
-`
-$ untar zxf fml-1.0.tar.gz
 
-$ cd fml-1.0
-
-$ sudo ./install.sh
-`
+    $ untar zxf fml-1.0.tar.gz
+    $ cd fml-1.0
+    $ sudo ./install.sh
 
 How to: check if FML is running
 -------------------------------
 
 Run this command:
-`
-$ fml --list
-`
+
+    $ fml --list
+
 This will list any FML processes which are running, or print a message
 saying no FML processes could be found.
 
@@ -53,13 +47,10 @@ How to: start & stop FML service
 
 The installer creates an init script for fml, which may be used to start
 and stop the fml as a service, and check if the service has been started:
-`
-$ sudo /etc/init.d/fml start
 
-$ sudo /etc/init.d/fml status
-
-$ sudo /etc/init.d/fml stop
-`
+    $ sudo /etc/init.d/fml start
+    $ sudo /etc/init.d/fml status
+    $ sudo /etc/init.d/fml stop
 
 How to: edit the configuration file
 -----------------------------------
@@ -94,13 +85,10 @@ Slave ID (numerical modbus address): 240, has two temperature sensors
 with register IDs 4 and 7. The raw values from these registers is to
 be used, so no post-processing function is needed.  Create the following
 section in the config file:
-`
-[slave_240]
 
-r4_name = Temp1
-
-r7_name = Temp1
-`
+    [slave_240]
+    r4_name = Temp1
+    r7_name = Temp1
 
 #### Note
 Any change to the slave configuration will result in the re-creation
@@ -124,13 +112,9 @@ To specify the post-processing function "thermister_to_celcius" for
 register 0 with parameters 4126, 298.15, 10000, the register should defined 
 in the appropriate slave section of the config file as follows:
 
-`
-r0_name = Temp1
-
-r0_pp_fn = thermister_to_celcius
-
-r0_pp_param = 4126,298.15,10000
-`
+    r0_name = Temp1
+    r0_pp_fn = thermister_to_celcius
+    r0_pp_param = 4126,298.15,10000
 
 How to: add a graph to the web server
 -------------------------------------
