@@ -1,12 +1,26 @@
 FML HOWTO
 =========
 
-How to download
----------------
+How to prepare your OS
+----------------------
+
+1. Download the Raspian image file from the Raspberry Pi website 
+   http://downloads.raspberrypi.org/raspbian_latest
+2. Unzip the image and write it to an SD card. A 4 GB card is ample in 
+   size. Using a class 10 or faster card is recommended.
+3. Boot the Raspberry Pi and use the raspi-config program to enlarge 
+   the filesystem, set the hostname as desired and reboot.
+
+How to download using git and build the installer
+-------------------------------------------------
+
+This procedre may be run on the Raspberry Pi itself, or another computer. 
+Make sure you have the following packages / tools installed: git, make.
 
 Clone the git repo https://github.com/matthewg42/fml.git
 
 i.e. use the command
+
     $ git clone https://github.com/matthewg42/fml.git
 
 How to: make installer tarball from github repo
@@ -28,7 +42,7 @@ Synopsis: copy the tarball to a raspberry pi running Raspian, untar it,
 change into the directory it creates and run the install.sh with root 
 permissions:
 
-    $ untar zxf fml-1.0.tar.gz
+    $ tar zxf fml-1.0.tar.gz
     $ cd fml-1.0
     $ sudo ./install.sh
 
@@ -124,6 +138,5 @@ development may make this easier. For now you have to do the following:
 
 1. Edit /usr/local/bin/fml_update_graphs.sh to generate new graphs using rrdtool.
 2. Edit /var/lib/fml/www/index.html to add the graph to the web page.
-
 
 

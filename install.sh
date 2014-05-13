@@ -55,7 +55,7 @@ set_serial_perms () {
 
 install_deps () {
     echo "Installing dependencies using apt-get (may take a little while)... "
-    apt-get -qq -y install screen vim python-serial python-daemon python-rrdtool rrdtool mini-httpd bc || erex 3 "ERROR: failed to install packages"
+    apt-get -qq update && apt-get -qq -y install screen vim python-serial python-daemon python-rrdtool rrdtool mini-httpd bc || erex 3 "ERROR: failed to install packages"
 }
 
 install_libs () {
@@ -121,7 +121,6 @@ install_httpd () {
     chmod 644 "$tmp" 
     su pi -c "crontab $tmp"
     rm -f "$tmp"
-    echo "crontab command to update graphs has been added to pi user, but is commented - use 'crontab -e' to edit"
     /etc/init.d/mini-httpd restart
 }
 
