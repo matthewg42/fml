@@ -1,16 +1,29 @@
 #!/bin/sh
-#
+
+### BEGIN INIT INFO
+# Provides:          fml
+# Required-Start:    $remote_fs $syslog
+# Required-Stop:     $remote_fs $syslog
+# Should-Start:      
+# Default-Start:     2 3 4 5
+# Default-Stop:      
+# Short-Description: fast modbus logger
+# Description:       FML reads data from serial ports in using the MODBUS
+#                    protocol and logs the data.
+### END INIT INFO
+
 # Note: config for this program read from /etc/fml.conf
 PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin
 DAEMON=`which fml`
 
 main () {
+    echo "init.d/fml run with params: $@; DAEMON=$DAEMON" >> /var/tmp/initlog.log
     test -x $DAEMON || erex 1 "daemon program not found: $DAEMON"
 
     case "$1" in
     start)
         echo "Starting ${DAEMON##*/} daemon... "
-        fml --config-file /etc/fml.conf
+        fml --config-file /etc/fml.conf --daemon
         ;;
     stop)
         echo "Stopping ${DAEMON##*/} daemon... "

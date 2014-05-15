@@ -74,6 +74,7 @@ install_daemon () {
         ln -s ../init.d/fml S02fml
         cd -
     done
+    update-rc.d fml defaults
 }
 
 update_motd () {
