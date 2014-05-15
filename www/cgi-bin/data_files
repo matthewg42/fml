@@ -20,8 +20,8 @@ def print_index():
   <table border="0" width="1000px">
     <tr>
       <td align="left"><a href="/">Graphs</a></td>
-      <td align="center"><a href="cgi-bin/data_files">Data Files</a></td>
-      <td align="center"><a href="cgi-bin/status">Daemon Status</a></td>
+      <td align="center"><a href="/cgi-bin/data_files">Data Files</a></td>
+      <td align="center"><a href="/cgi-bin/status">Daemon Status</a></td>
       <td align="right"><a href="https://github.com/matthewg42/fml">Github</a></td>
     </tr>
   </table>
