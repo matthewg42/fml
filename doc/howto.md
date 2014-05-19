@@ -110,6 +110,31 @@ of the RRD database, destroying historical data.
 
 ### Adding a register with a post-processing function
 
+Post-processing function are defined in the pp_functions.py python module
+which is typically found here:
+
+    /usr/local/lib/python2.7/dist-packages/pp_functions.py
+
+The file is owned by root, so to edit it, you will need to use sudo (with
+the editor of your choice, e.g. nano, vim, emacs etc):
+
+    sudo nano /usr/local/lib/python2.7/dist-packages/pp_functions.py
+
+To add a new post-processing function, first define a function call which
+does the necessary manipulation, e.g.:
+
+    def my_post_processing_function(input1, input2)
+        return (input1+input2)/2.0
+
+...then call the register function.  The best place to do this is where the
+register function is also called for existing post-processing functions -
+just before the __main__ dection of the pp_functions.py file:
+
+    register(thermister_to_celcius)        # these three
+    register(scale_voltage)                # lines already exist
+    register(scale_current)                # in pp_functions.py
+    register(my_post_processing_function)  # Add this line for your function
+
 Assuming an appropriate post-processing function is already implemented,
 it may be called by adding a new key in the slave section of the config 
 file named "r{register-id}_pp_fn". The value for this key is the name 

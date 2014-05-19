@@ -14,6 +14,14 @@ other than the default graphs.  Also, the generated pages would
 benefit from good CSS styling.
 
 
+Better location for post-processing function definitions
+--------------------------------------------------------
+
+Currently, post-processing functions are defined in one of the modules
+which is installed with fml in the python module path.  It might be
+better to have a file in /etc/... somewhere for this.
+
+
 Debian Package
 --------------
 
