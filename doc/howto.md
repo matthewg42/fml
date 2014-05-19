@@ -110,8 +110,31 @@ of the RRD database, destroying historical data.
 
 ### Adding a register with a post-processing function
 
+Assuming an appropriate post-processing function is already implemented,
+it may be called by adding a new key in the slave section of the config 
+file named "r{register-id}_pp_fn". The value for this key is the name 
+of the post-processing function to be used.
+
+Some post-processing functions require additional per-register 
+parameters. These may be specified using a key named 
+"r{register-id}_pp_param" with parameters passed as a comma separated list 
+of values.
+
+#### Example
+
+To specify the post-processing function "thermister_to_celcius" for 
+register 0 with parameters 4126, 298.15, 10000, the register should defined 
+in the appropriate slave section of the config file as follows:
+
+    r0_name = Temp1
+    r0_pp_fn = thermister_to_celcius
+    r0_pp_param = 4126,298.15,10000
+
+Adding a new post-processing function
+-------------------------------------
+
 Post-processing function are defined in the pp_functions.py python module
-which is typically found here:
+which is found here:
 
     /usr/local/lib/python2.7/dist-packages/pp_functions.py
 
@@ -134,26 +157,6 @@ just before the __main__ dection of the pp_functions.py file:
     register(scale_voltage)                # lines already exist
     register(scale_current)                # in pp_functions.py
     register(my_post_processing_function)  # Add this line for your function
-
-Assuming an appropriate post-processing function is already implemented,
-it may be called by adding a new key in the slave section of the config 
-file named "r{register-id}_pp_fn". The value for this key is the name 
-of the post-processing function to be used.
-
-Some post-processing functions require additional per-register 
-parameters. These may be specified using a key named 
-"r{register-id}_pp_param" with parameters passed as a comma separated list 
-of values.
-
-#### Example
-
-To specify the post-processing function "thermister_to_celcius" for 
-register 0 with parameters 4126, 298.15, 10000, the register should defined 
-in the appropriate slave section of the config file as follows:
-
-    r0_name = Temp1
-    r0_pp_fn = thermister_to_celcius
-    r0_pp_param = 4126,298.15,10000
 
 How to: run in a terminal and see data coming through fml
 ---------------------------------------------------------
