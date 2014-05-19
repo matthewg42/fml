@@ -133,20 +133,14 @@ in the appropriate slave section of the config file as follows:
 How to: run in a terminal and see data coming through fml
 ---------------------------------------------------------
 
-1. Stop the existing FML daemon
+To run in the terminal, stop the daemon mode instance of fml, and run the fml program directly:
 
     $ sudo /etc/init.d/fml stop
-
-2. Start in the terminal:
-
     $ sudo fml
 
-3. To close fml in the terminal, press control-C
-4. Re-start fml in daemon mode:
+To stop the terminal mode execution, press control-C.  If desired, re-start the daemon mode:
 
     $ sudo /etc/init.d/fml start
-
-
 
 
 How to: add a graph to the web server
