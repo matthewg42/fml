@@ -130,6 +130,25 @@ in the appropriate slave section of the config file as follows:
     r0_pp_fn = thermister_to_celcius
     r0_pp_param = 4126,298.15,10000
 
+How to: run in a terminal and see data coming through fml
+---------------------------------------------------------
+
+1. Stop the existing FML daemon
+
+    $ sudo /etc/init.d/fml stop
+
+2. Start in the terminal:
+
+    $ sudo fml
+
+3. To close fml in the terminal, press control-C
+4. Re-start fml in daemon mode:
+
+    $ sudo /etc/init.d/fml start
+
+
+
+
 How to: add a graph to the web server
 -------------------------------------
 
